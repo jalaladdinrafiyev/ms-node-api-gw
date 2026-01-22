@@ -8,7 +8,7 @@ describe('Request Logger Middleware', () => {
     beforeEach(() => {
         loggerInfoSpy = jest.spyOn(logger, 'info').mockImplementation();
         loggerRequestSpy = jest.spyOn(logger, 'request').mockImplementation();
-        
+
         req = {
             method: 'GET',
             originalUrl: '/test',
@@ -40,11 +40,14 @@ describe('Request Logger Middleware', () => {
     test('should log request information', () => {
         requestLogger(req, res, next);
 
-        expect(loggerInfoSpy).toHaveBeenCalledWith('Request received', expect.objectContaining({
-            method: 'GET',
-            url: '/test',
-            ip: '127.0.0.1'
-        }));
+        expect(loggerInfoSpy).toHaveBeenCalledWith(
+            'Request received',
+            expect.objectContaining({
+                method: 'GET',
+                url: '/test',
+                ip: '127.0.0.1'
+            })
+        );
     });
 
     test('should call next()', () => {
@@ -54,15 +57,15 @@ describe('Request Logger Middleware', () => {
 
     test('should log response when finish event fires', () => {
         requestLogger(req, res, next);
-        
+
         // Verify finish event was registered
         expect(res.on).toHaveBeenCalledWith('finish', expect.any(Function));
-        
+
         // Call the finish callback synchronously
         if (res._finishCallback) {
             res._finishCallback();
         }
-        
+
         // Check that logger.request was called with correct parameters
         expect(loggerRequestSpy).toHaveBeenCalledWith(
             req,
@@ -74,9 +77,12 @@ describe('Request Logger Middleware', () => {
     test('should use connection.remoteAddress if ip is not available', () => {
         delete req.ip;
         requestLogger(req, res, next);
-        
-        expect(loggerInfoSpy).toHaveBeenCalledWith('Request received', expect.objectContaining({
-            ip: '127.0.0.1'
-        }));
+
+        expect(loggerInfoSpy).toHaveBeenCalledWith(
+            'Request received',
+            expect.objectContaining({
+                ip: '127.0.0.1'
+            })
+        );
     });
 });

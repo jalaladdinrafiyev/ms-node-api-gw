@@ -1,9 +1,9 @@
 /**
  * API Gateway Server
- * 
+ *
  * Enterprise-grade API Gateway with hot-reload, circuit breakers,
  * load balancing, and comprehensive middleware stack.
- * 
+ *
  * @module server
  */
 
@@ -26,9 +26,9 @@ const {
 } = require('./middleware');
 
 // Route imports (using barrel exports)
-const { 
-    healthCheck, 
-    metricsMiddleware, 
+const {
+    healthCheck,
+    metricsMiddleware,
     metricsHandler,
     livenessProbe,
     readinessProbe
@@ -76,11 +76,17 @@ app.use(requestLogger);
 // ============================================
 
 // Comprehensive health check
-app.get('/health', healthCheck(() => dynamicRouter));
+app.get(
+    '/health',
+    healthCheck(() => dynamicRouter)
+);
 
 // Kubernetes probes
 app.get('/livez', livenessProbe);
-app.get('/readyz', readinessProbe(() => dynamicRouter));
+app.get(
+    '/readyz',
+    readinessProbe(() => dynamicRouter)
+);
 
 // Prometheus metrics
 app.get('/metrics', metricsHandler);
@@ -95,7 +101,7 @@ app.get('/metrics', metricsHandler);
 const reloadConfig = () => {
     try {
         const newRouter = configLoader.loadConfig(config.gatewayConfigPath);
-        
+
         if (newRouter) {
             // Atomic swap (thread-safe in Node.js)
             const routeCount = newRouter.stack?.length || 0;
@@ -105,9 +111,9 @@ const reloadConfig = () => {
             logger.warn('Config reload failed, keeping existing router');
         }
     } catch (error) {
-        logger.error('Error during config reload', { 
-            error: error.message, 
-            stack: error.stack 
+        logger.error('Error during config reload', {
+            error: error.message,
+            stack: error.stack
         });
     }
 };
@@ -119,9 +125,9 @@ reloadConfig();
 try {
     fileWatcher = watcher.setupWatcher(config.gatewayConfigPath, reloadConfig);
 } catch (error) {
-    logger.error('Failed to setup file watcher', { 
-        error: error.message, 
-        stack: error.stack 
+    logger.error('Failed to setup file watcher', {
+        error: error.message,
+        stack: error.stack
     });
 }
 
@@ -152,7 +158,7 @@ app.use(globalErrorHandler);
  */
 const startServer = async () => {
     const port = config.server.port;
-    
+
     // Validate port
     if (isNaN(port) || port < 1 || port > 65535) {
         logger.error('Invalid PORT configuration', { port });
@@ -161,46 +167,47 @@ const startServer = async () => {
 
     // Initialize Redis for distributed rate limiting (non-blocking)
     if (process.env.REDIS_URL) {
-        rateLimiter.initializeRedis().then(connected => {
+        try {
+            const connected = await rateLimiter.initializeRedis();
             if (connected) {
                 logger.info('Distributed rate limiting enabled via Redis');
             }
-        }).catch(err => {
+        } catch (err) {
             logger.warn('Redis initialization failed, using in-memory rate limiting', {
                 error: err.message
             });
-        });
+        }
     }
-    
+
     server = app.listen(port, () => {
-        logger.info('Gateway started', { 
+        logger.info('Gateway started', {
             port,
             env: config.env,
             pid: process.pid,
             rateLimitStore: rateLimiter.isRedisConnected() ? 'redis' : 'memory'
         });
     });
-    
+
     server.on('error', (error) => {
         if (error.code === 'EADDRINUSE') {
             logger.error('Port already in use', { port, code: error.code });
         } else {
-            logger.error('Server error', { 
-                error: error.message, 
+            logger.error('Server error', {
+                error: error.message,
                 code: error.code,
-                stack: error.stack 
+                stack: error.stack
             });
         }
         process.exit(1);
     });
-    
+
     // Register rate limiter shutdown handler
     shutdown.registerShutdownHandler(rateLimiter.shutdown);
-    
+
     // Setup graceful shutdown
-    shutdown.setupGracefulShutdown({ 
-        server, 
-        watcher: fileWatcher 
+    shutdown.setupGracefulShutdown({
+        server,
+        watcher: fileWatcher
     });
 };
 

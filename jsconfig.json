@@ -1,0 +1,17 @@
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "target": "ES2022",
+        "checkJs": true,
+        "moduleResolution": "node",
+        "baseUrl": ".",
+        "paths": {
+            "@lib/*": ["lib/*"],
+            "@middleware/*": ["middleware/*"],
+            "@routes/*": ["routes/*"],
+            "@plugins/*": ["plugins/*"]
+        }
+    },
+    "include": ["**/*.js"],
+    "exclude": ["node_modules", "coverage", "__tests__"]
+}

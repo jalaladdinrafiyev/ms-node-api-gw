@@ -1,0 +1,42 @@
+# API Gateway Configuration
+# Copy this file to gateway.yaml and customize for your environment
+
+version: '2.2.0'
+
+# Global settings (applied to all routes unless overridden)
+defaults:
+    timeout: 30000 # Request timeout in ms
+    retries: 3 # Number of retry attempts
+    circuitBreaker: true # Enable circuit breaker
+
+# Route definitions
+routes:
+    # Example: Simple proxy to a backend service
+    - path: /api/users
+      upstream: http://user-service:3001
+      methods: [GET, POST, PUT, DELETE]
+
+    # Example: Service with multiple upstreams (load balanced)
+    - path: /api/products
+      upstreams:
+          - http://product-service-1:3002
+          - http://product-service-2:3002
+      loadBalancing: round-robin
+      healthPath: /health
+
+    # Example: Protected route with authentication plugin
+    - path: /api/orders
+      upstream: http://order-service:3003
+      plugins:
+          - name: central-auth
+            options:
+                authServiceUrl: http://auth-service:3004
+                excludePaths:
+                    - /api/orders/public
+
+    # Example: Rate-limited public API
+    - path: /api/public
+      upstream: http://public-service:3005
+      rateLimit:
+          windowMs: 60000
+          max: 100

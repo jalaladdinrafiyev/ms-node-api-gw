@@ -83,7 +83,7 @@ describe('Metrics Endpoint', () => {
             // Create a new app instance to avoid interference
             const testApp = express();
             testApp.get('/metrics', metricsHandler);
-            
+
             // Mock register.metrics to throw an error
             const originalMetrics = register.metrics;
             register.metrics = jest.fn().mockRejectedValue(new Error('Metrics error'));
@@ -107,10 +107,10 @@ describe('Metrics Endpoint', () => {
             testApp.use(metricsMiddleware);
             testApp.get('/test', (req, res) => res.json({ ok: true }));
             testApp.get('/metrics', metricsHandler);
-            
+
             // Make a request first to generate some metrics
             await request(testApp).get('/test');
-            
+
             const response = await request(testApp).get('/metrics');
 
             // Check that we got metrics (not an error)

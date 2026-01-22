@@ -95,7 +95,7 @@ const metricsHandler = async (req, res) => {
         // Update circuit breaker metrics
         const circuitBreakerManager = require('../lib/circuitBreaker');
         const breakerStats = circuitBreakerManager.getStats();
-        
+
         for (const [upstream, stats] of Object.entries(breakerStats)) {
             const stateValue = stats.state === 'open' ? 1 : stats.state === 'halfOpen' ? 2 : 0;
             circuitBreakerState.set({ upstream }, stateValue);
@@ -103,7 +103,7 @@ const metricsHandler = async (req, res) => {
 
         // Get metrics first, then set headers and send response
         const metrics = await register.metrics();
-        
+
         // Only set headers if we successfully got metrics
         if (!res.headersSent) {
             res.set('Content-Type', register.contentType);

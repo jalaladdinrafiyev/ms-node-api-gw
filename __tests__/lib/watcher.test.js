@@ -71,14 +71,12 @@ describe('File Watcher', () => {
 
         test('should trigger reload on file change', () => {
             jest.useFakeTimers();
-            
+
             const onReload = jest.fn();
             setupWatcher('./gateway.yaml', onReload);
 
             // Get the change handler
-            const changeHandler = mockWatcher.on.mock.calls.find(
-                call => call[0] === 'change'
-            )[1];
+            const changeHandler = mockWatcher.on.mock.calls.find((call) => call[0] === 'change')[1];
 
             // Trigger change
             changeHandler('./gateway.yaml');
@@ -92,13 +90,11 @@ describe('File Watcher', () => {
 
         test('should debounce rapid file changes', () => {
             jest.useFakeTimers();
-            
+
             const onReload = jest.fn();
             setupWatcher('./gateway.yaml', onReload);
 
-            const changeHandler = mockWatcher.on.mock.calls.find(
-                call => call[0] === 'change'
-            )[1];
+            const changeHandler = mockWatcher.on.mock.calls.find((call) => call[0] === 'change')[1];
 
             // Trigger multiple rapid changes
             changeHandler('./gateway.yaml');
@@ -118,9 +114,7 @@ describe('File Watcher', () => {
             const onReload = jest.fn();
             setupWatcher('./gateway.yaml', onReload);
 
-            const errorHandler = mockWatcher.on.mock.calls.find(
-                call => call[0] === 'error'
-            )[1];
+            const errorHandler = mockWatcher.on.mock.calls.find((call) => call[0] === 'error')[1];
 
             const error = new Error('Watcher error');
             errorHandler(error);
@@ -153,15 +147,13 @@ describe('File Watcher', () => {
 
         test('should handle reload callback errors gracefully', () => {
             jest.useFakeTimers();
-            
+
             const onReload = jest.fn().mockImplementation(() => {
                 throw new Error('Reload error');
             });
             setupWatcher('./gateway.yaml', onReload);
 
-            const changeHandler = mockWatcher.on.mock.calls.find(
-                call => call[0] === 'change'
-            )[1];
+            const changeHandler = mockWatcher.on.mock.calls.find((call) => call[0] === 'change')[1];
 
             // Trigger change - should not throw
             changeHandler('./gateway.yaml');

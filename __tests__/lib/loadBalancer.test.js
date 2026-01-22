@@ -4,7 +4,7 @@ const upstreamHealthChecker = require('../../lib/upstreamHealth');
 describe('Load Balancer', () => {
     beforeEach(() => {
         // Mock upstream health checker
-        jest.spyOn(upstreamHealthChecker, 'isHealthy').mockImplementation((url) => {
+        jest.spyOn(upstreamHealthChecker, 'isHealthy').mockImplementation((_url) => {
             // Mark all as healthy by default
             return true;
         });
@@ -21,10 +21,7 @@ describe('Load Balancer', () => {
         });
 
         test('should parse array of upstreams', () => {
-            const result = loadBalancer.parseUpstreams([
-                'http://test1.com',
-                'http://test2.com'
-            ]);
+            const result = loadBalancer.parseUpstreams(['http://test1.com', 'http://test2.com']);
             expect(result).toEqual(['http://test1.com', 'http://test2.com']);
         });
 
@@ -45,11 +42,7 @@ describe('Load Balancer', () => {
     });
 
     describe('selectUpstream', () => {
-        const upstreams = [
-            'http://test1.com',
-            'http://test2.com',
-            'http://test3.com'
-        ];
+        const upstreams = ['http://test1.com', 'http://test2.com', 'http://test3.com'];
 
         test('should return null for empty upstreams', () => {
             const result = loadBalancer.selectUpstream([], 'round_robin');

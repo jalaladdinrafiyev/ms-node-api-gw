@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+
+# Tests
+__tests__/
+*.test.js
+jest.config.js
+coverage/
+
+# Logs
+logs/
+*.log
+
+# IDE/Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+.cursor/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Documentation (not needed in container)
+README.md
+*.md
+
+# Development files
+.env.local
+.env.development
+docker-compose.yml
+docker-compose*.yml
+
+# Misc
+npm-debug.log*
+.npm

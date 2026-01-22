@@ -52,25 +52,25 @@ describe('Config Loader', () => {
         test('should return null for non-existent file', () => {
             const logger = require('../../lib/logger');
             const loggerErrorSpy = jest.spyOn(logger, 'error').mockImplementation();
-            
+
             const result = loadConfigFile('./nonexistent.yaml');
-            
+
             expect(result).toBeNull();
             expect(loggerErrorSpy).toHaveBeenCalled();
-            
+
             loggerErrorSpy.mockRestore();
         });
 
         test('should return null for invalid YAML', () => {
             fs.writeFileSync(testConfigPath, 'invalid: yaml: content: [');
-            
+
             const logger = require('../../lib/logger');
             const loggerErrorSpy = jest.spyOn(logger, 'error').mockImplementation();
             const result = loadConfigFile(testConfigPath);
-            
+
             expect(result).toBeNull();
             expect(loggerErrorSpy).toHaveBeenCalled();
-            
+
             loggerErrorSpy.mockRestore();
         });
 
@@ -81,14 +81,14 @@ describe('Config Loader', () => {
             };
 
             fs.writeFileSync(testConfigPath, yaml.dump(config));
-            
+
             const logger = require('../../lib/logger');
             const loggerErrorSpy = jest.spyOn(logger, 'error').mockImplementation();
             const result = loadConfigFile(testConfigPath);
-            
+
             expect(result).toBeNull();
             expect(loggerErrorSpy).toHaveBeenCalled();
-            
+
             loggerErrorSpy.mockRestore();
         });
 
@@ -98,14 +98,14 @@ describe('Config Loader', () => {
             };
 
             fs.writeFileSync(testConfigPath, yaml.dump(config));
-            
+
             const logger = require('../../lib/logger');
             const loggerErrorSpy = jest.spyOn(logger, 'error').mockImplementation();
             const result = loadConfigFile(testConfigPath);
-            
+
             expect(result).toBeNull();
             expect(loggerErrorSpy).toHaveBeenCalled();
-            
+
             loggerErrorSpy.mockRestore();
         });
     });
@@ -130,8 +130,14 @@ describe('Config Loader', () => {
 
             expect(result).toBeDefined();
             expect(buildRouter).toHaveBeenCalledWith(config.routes);
-            expect(loggerInfoSpy).toHaveBeenCalledWith('Loading configuration', expect.objectContaining({ configPath: testConfigPath }));
-            expect(loggerInfoSpy).toHaveBeenCalledWith('Configuration reloaded successfully', expect.any(Object));
+            expect(loggerInfoSpy).toHaveBeenCalledWith(
+                'Loading configuration',
+                expect.objectContaining({ configPath: testConfigPath })
+            );
+            expect(loggerInfoSpy).toHaveBeenCalledWith(
+                'Configuration reloaded successfully',
+                expect.any(Object)
+            );
 
             loggerInfoSpy.mockRestore();
         });

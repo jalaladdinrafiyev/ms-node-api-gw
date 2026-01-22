@@ -13,7 +13,7 @@ describe('Config Module', () => {
     describe('Default values', () => {
         test('should have default server config', () => {
             const config = require('../../lib/config');
-            
+
             expect(config.server.port).toBe(3000);
             expect(config.server.trustProxy).toBe(false);
             expect(config.server.requestBodyLimit).toBe('10mb');
@@ -21,14 +21,14 @@ describe('Config Module', () => {
 
         test('should have default rate limit config', () => {
             const config = require('../../lib/config');
-            
+
             expect(config.rateLimit.windowMs).toBe(60000);
             expect(config.rateLimit.max).toBe(100);
         });
 
         test('should have default timeout config', () => {
             const config = require('../../lib/config');
-            
+
             expect(config.timeouts.request).toBe(15000);
             expect(config.timeouts.upstream).toBe(30000);
             expect(config.timeouts.healthCheck).toBe(5000);
@@ -37,7 +37,7 @@ describe('Config Module', () => {
 
         test('should have default retry config', () => {
             const config = require('../../lib/config');
-            
+
             expect(config.retry.maxRetries).toBe(3);
             expect(config.retry.initialDelay).toBe(100);
             expect(config.retry.maxDelay).toBe(10000);
@@ -47,7 +47,7 @@ describe('Config Module', () => {
 
         test('should have default circuit breaker config', () => {
             const config = require('../../lib/config');
-            
+
             expect(config.circuitBreaker.timeout).toBe(30000);
             expect(config.circuitBreaker.errorThresholdPercentage).toBe(50);
             expect(config.circuitBreaker.resetTimeout).toBe(30000);
@@ -55,7 +55,7 @@ describe('Config Module', () => {
 
         test('should have default health check config', () => {
             const config = require('../../lib/config');
-            
+
             expect(config.healthCheck.intervalMs).toBe(30000);
             expect(config.healthCheck.unhealthyThreshold).toBe(3);
             expect(config.healthCheck.healthyThreshold).toBe(1);
@@ -63,14 +63,14 @@ describe('Config Module', () => {
 
         test('should have default connection pool config', () => {
             const config = require('../../lib/config');
-            
+
             expect(config.connectionPool.maxSockets).toBe(256);
             expect(config.connectionPool.maxFreeSockets).toBe(256);
         });
 
         test('should have default CORS config', () => {
             const config = require('../../lib/config');
-            
+
             expect(config.cors.origin).toBe('*');
             expect(config.cors.credentials).toBe(true);
         });
@@ -81,7 +81,7 @@ describe('Config Module', () => {
             process.env.PORT = '8080';
             jest.resetModules();
             const config = require('../../lib/config');
-            
+
             expect(config.server.port).toBe(8080);
         });
 
@@ -89,7 +89,7 @@ describe('Config Module', () => {
             process.env.TRUST_PROXY = 'true';
             jest.resetModules();
             const config = require('../../lib/config');
-            
+
             expect(config.server.trustProxy).toBe(true);
         });
 
@@ -97,7 +97,7 @@ describe('Config Module', () => {
             process.env.LOG_LEVEL = 'debug';
             jest.resetModules();
             const config = require('../../lib/config');
-            
+
             expect(config.logging.level).toBe('debug');
         });
 
@@ -105,7 +105,7 @@ describe('Config Module', () => {
             process.env.RATE_LIMIT_MAX = '500';
             jest.resetModules();
             const config = require('../../lib/config');
-            
+
             expect(config.rateLimit.max).toBe(500);
         });
 
@@ -113,7 +113,7 @@ describe('Config Module', () => {
             process.env.MAX_RETRIES = '5';
             jest.resetModules();
             const config = require('../../lib/config');
-            
+
             expect(config.retry.maxRetries).toBe(5);
         });
 
@@ -121,7 +121,7 @@ describe('Config Module', () => {
             process.env.CORS_ORIGIN = 'https://example.com';
             jest.resetModules();
             const config = require('../../lib/config');
-            
+
             expect(config.cors.origin).toBe('https://example.com');
         });
 
@@ -129,7 +129,7 @@ describe('Config Module', () => {
             process.env.CORS_CREDENTIALS = 'false';
             jest.resetModules();
             const config = require('../../lib/config');
-            
+
             expect(config.cors.credentials).toBe(false);
         });
 
@@ -137,7 +137,7 @@ describe('Config Module', () => {
             process.env.GATEWAY_CONFIG_PATH = '/etc/gateway/config.yaml';
             jest.resetModules();
             const config = require('../../lib/config');
-            
+
             expect(config.gatewayConfigPath).toBe('/etc/gateway/config.yaml');
         });
     });
@@ -147,7 +147,7 @@ describe('Config Module', () => {
             process.env.NODE_ENV = 'development';
             jest.resetModules();
             const config = require('../../lib/config');
-            
+
             expect(config.isDevelopment).toBe(true);
             expect(config.isProduction).toBe(false);
             expect(config.isTest).toBe(false);
@@ -157,7 +157,7 @@ describe('Config Module', () => {
             process.env.NODE_ENV = 'production';
             jest.resetModules();
             const config = require('../../lib/config');
-            
+
             expect(config.isDevelopment).toBe(false);
             expect(config.isProduction).toBe(true);
             expect(config.isTest).toBe(false);
@@ -167,7 +167,7 @@ describe('Config Module', () => {
             process.env.NODE_ENV = 'test';
             jest.resetModules();
             const config = require('../../lib/config');
-            
+
             expect(config.isDevelopment).toBe(false);
             expect(config.isProduction).toBe(false);
             expect(config.isTest).toBe(true);
@@ -179,7 +179,7 @@ describe('Config Module', () => {
             process.env.PORT = '99999';
             jest.resetModules();
             const config = require('../../lib/config');
-            
+
             // Should fall back to default due to max constraint
             expect(config.server.port).toBe(3000);
             expect(config.validationErrors.length).toBeGreaterThan(0);
@@ -189,7 +189,7 @@ describe('Config Module', () => {
             process.env.PORT = '-1';
             jest.resetModules();
             const config = require('../../lib/config');
-            
+
             // Should fall back to default due to min constraint
             expect(config.server.port).toBe(3000);
         });
@@ -198,7 +198,7 @@ describe('Config Module', () => {
             process.env.PORT = 'not-a-number';
             jest.resetModules();
             const config = require('../../lib/config');
-            
+
             // Should fall back to default
             expect(config.server.port).toBe(3000);
         });
@@ -207,7 +207,7 @@ describe('Config Module', () => {
             process.env.MAX_RETRIES = '100';
             jest.resetModules();
             const config = require('../../lib/config');
-            
+
             // Should fall back to default due to max: 10 constraint
             expect(config.retry.maxRetries).toBe(3);
         });
@@ -215,7 +215,7 @@ describe('Config Module', () => {
         test('validate() should return true when no errors', () => {
             jest.resetModules();
             const config = require('../../lib/config');
-            
+
             // Clear any validation errors from other tests
             config.validationErrors.length = 0;
             expect(config.validate()).toBe(true);
@@ -225,7 +225,7 @@ describe('Config Module', () => {
             process.env.PORT = 'invalid';
             jest.resetModules();
             const config = require('../../lib/config');
-            
+
             expect(config.validate()).toBe(false);
         });
 
@@ -233,10 +233,10 @@ describe('Config Module', () => {
             process.env.PORT = 'invalid';
             jest.resetModules();
             const config = require('../../lib/config');
-            
+
             const errors = config.getValidationErrors();
             expect(Array.isArray(errors)).toBe(true);
-            
+
             // Should be a copy, not the original
             errors.push('test');
             expect(config.getValidationErrors().length).not.toBe(errors.length);
@@ -246,13 +246,13 @@ describe('Config Module', () => {
     describe('Config immutability', () => {
         test('config object should be frozen', () => {
             const config = require('../../lib/config');
-            
+
             expect(Object.isFrozen(config)).toBe(true);
         });
 
         test('nested objects should be frozen', () => {
             const config = require('../../lib/config');
-            
+
             expect(Object.isFrozen(config.server)).toBe(true);
             expect(Object.isFrozen(config.rateLimit)).toBe(true);
             expect(Object.isFrozen(config.timeouts)).toBe(true);

@@ -12,141 +12,147 @@
 version: '3.8'
 
 services:
-  # ==========================================
-  # API Gateway
-  # ==========================================
-  api-gateway:
-    image: api-gateway:1.0.0
-    container_name: api-gateway
-    restart: unless-stopped
-    ports:
-      - "3000:3000"
-    depends_on:
-      redis:
-        condition: service_healthy
-    
-    environment:
-      # Required
-      - NODE_ENV=production
-      - PORT=3000
-      
-      # Security
-      - TRUST_PROXY=true
-      - CORS_ORIGIN=${CORS_ORIGIN:-*}
-      - CORS_CREDENTIALS=${CORS_CREDENTIALS:-true}
-      
-      # Logging
-      - LOG_LEVEL=${LOG_LEVEL:-info}
-      
-      # Redis for distributed rate limiting
-      - REDIS_URL=redis://redis:6379
-      
-      # Rate Limiting
-      - RATE_LIMIT_MAX=${RATE_LIMIT_MAX:-1000}
-      - RATE_LIMIT_WINDOW_MS=${RATE_LIMIT_WINDOW_MS:-60000}
-      - RATE_LIMIT_STRICT_MAX=${RATE_LIMIT_STRICT_MAX:-10}
-      
-      # Timeouts (milliseconds)
-      - REQUEST_TIMEOUT_MS=${REQUEST_TIMEOUT_MS:-30000}
-      - UPSTREAM_TIMEOUT_MS=${UPSTREAM_TIMEOUT_MS:-60000}
-      - SHUTDOWN_TIMEOUT_MS=${SHUTDOWN_TIMEOUT_MS:-30000}
-      
-      # Retry
-      - MAX_RETRIES=${MAX_RETRIES:-3}
-      - RETRY_INITIAL_DELAY_MS=${RETRY_INITIAL_DELAY_MS:-100}
-      - RETRY_MAX_DELAY_MS=${RETRY_MAX_DELAY_MS:-2000}
-      
-      # Circuit Breaker
-      - CIRCUIT_BREAKER_TIMEOUT_MS=${CIRCUIT_BREAKER_TIMEOUT_MS:-10000}
-      - CIRCUIT_BREAKER_ERROR_THRESHOLD=${CIRCUIT_BREAKER_ERROR_THRESHOLD:-50}
-      - CIRCUIT_BREAKER_RESET_TIMEOUT_MS=${CIRCUIT_BREAKER_RESET_TIMEOUT_MS:-30000}
-      
-      # Health Checks
-      - HEALTH_CHECK_INTERVAL_MS=${HEALTH_CHECK_INTERVAL_MS:-10000}
-      - HEALTH_CHECK_TIMEOUT_MS=${HEALTH_CHECK_TIMEOUT_MS:-5000}
-      - HEALTH_CHECK_UNHEALTHY_THRESHOLD=${HEALTH_CHECK_UNHEALTHY_THRESHOLD:-3}
-      - HEALTH_CHECK_HEALTHY_THRESHOLD=${HEALTH_CHECK_HEALTHY_THRESHOLD:-2}
-      
-      # Connection Pool
-      - MAX_SOCKETS=${MAX_SOCKETS:-256}
-      - MAX_FREE_SOCKETS=${MAX_FREE_SOCKETS:-64}
-    
-    volumes:
-      # Mount your gateway configuration
-      - ./gateway.yaml:/app/gateway.yaml:ro
-      
-      # Optional: Persist logs
-      - ./logs:/app/logs
-    
-    # Docker-native health check
-    healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/readyz', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
-    
-    # Resource limits (adjust based on your server)
-    deploy:
-      resources:
-        limits:
-          cpus: '2.0'
-          memory: 1G
-        reservations:
-          cpus: '0.5'
-          memory: 256M
-    
-    # Logging configuration
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "50m"
-        max-file: "5"
-    
-    networks:
-      - gateway-network
+    # ==========================================
+    # API Gateway
+    # ==========================================
+    api-gateway:
+        image: api-gateway:1.0.0
+        container_name: api-gateway
+        restart: unless-stopped
+        ports:
+            - '3000:3000'
+        depends_on:
+            redis:
+                condition: service_healthy
 
-  # ==========================================
-  # Redis - Distributed Rate Limiting Store
-  # ==========================================
-  redis:
-    image: redis:7-alpine
-    container_name: api-gateway-redis
-    restart: unless-stopped
-    command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy volatile-lru
-    
-    volumes:
-      - redis-data:/data
-    
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 5s
-    
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 256M
-        reservations:
-          cpus: '0.1'
-          memory: 64M
-    
-    networks:
-      - gateway-network
+        environment:
+            # Required
+            - NODE_ENV=production
+            - PORT=3000
+
+            # Security
+            - TRUST_PROXY=true
+            - CORS_ORIGIN=${CORS_ORIGIN:-*}
+            - CORS_CREDENTIALS=${CORS_CREDENTIALS:-true}
+
+            # Logging
+            - LOG_LEVEL=${LOG_LEVEL:-info}
+
+            # Redis for distributed rate limiting
+            - REDIS_URL=redis://redis:6379
+
+            # Rate Limiting
+            - RATE_LIMIT_MAX=${RATE_LIMIT_MAX:-1000}
+            - RATE_LIMIT_WINDOW_MS=${RATE_LIMIT_WINDOW_MS:-60000}
+            - RATE_LIMIT_STRICT_MAX=${RATE_LIMIT_STRICT_MAX:-10}
+
+            # Timeouts (milliseconds)
+            - REQUEST_TIMEOUT_MS=${REQUEST_TIMEOUT_MS:-30000}
+            - UPSTREAM_TIMEOUT_MS=${UPSTREAM_TIMEOUT_MS:-60000}
+            - SHUTDOWN_TIMEOUT_MS=${SHUTDOWN_TIMEOUT_MS:-30000}
+
+            # Retry
+            - MAX_RETRIES=${MAX_RETRIES:-3}
+            - RETRY_INITIAL_DELAY_MS=${RETRY_INITIAL_DELAY_MS:-100}
+            - RETRY_MAX_DELAY_MS=${RETRY_MAX_DELAY_MS:-2000}
+
+            # Circuit Breaker
+            - CIRCUIT_BREAKER_TIMEOUT_MS=${CIRCUIT_BREAKER_TIMEOUT_MS:-10000}
+            - CIRCUIT_BREAKER_ERROR_THRESHOLD=${CIRCUIT_BREAKER_ERROR_THRESHOLD:-50}
+            - CIRCUIT_BREAKER_RESET_TIMEOUT_MS=${CIRCUIT_BREAKER_RESET_TIMEOUT_MS:-30000}
+
+            # Health Checks
+            - HEALTH_CHECK_INTERVAL_MS=${HEALTH_CHECK_INTERVAL_MS:-10000}
+            - HEALTH_CHECK_TIMEOUT_MS=${HEALTH_CHECK_TIMEOUT_MS:-5000}
+            - HEALTH_CHECK_UNHEALTHY_THRESHOLD=${HEALTH_CHECK_UNHEALTHY_THRESHOLD:-3}
+            - HEALTH_CHECK_HEALTHY_THRESHOLD=${HEALTH_CHECK_HEALTHY_THRESHOLD:-2}
+
+            # Connection Pool
+            - MAX_SOCKETS=${MAX_SOCKETS:-256}
+            - MAX_FREE_SOCKETS=${MAX_FREE_SOCKETS:-64}
+
+        volumes:
+            # Mount your gateway configuration
+            - ./gateway.yaml:/app/gateway.yaml:ro
+
+            # Optional: Persist logs
+            - ./logs:/app/logs
+
+        # Docker-native health check
+        healthcheck:
+            test:
+                [
+                    'CMD',
+                    'node',
+                    '-e',
+                    "require('http').get('http://localhost:3000/readyz', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"
+                ]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 10s
+
+        # Resource limits (adjust based on your server)
+        deploy:
+            resources:
+                limits:
+                    cpus: '2.0'
+                    memory: 1G
+                reservations:
+                    cpus: '0.5'
+                    memory: 256M
+
+        # Logging configuration
+        logging:
+            driver: 'json-file'
+            options:
+                max-size: '50m'
+                max-file: '5'
+
+        networks:
+            - gateway-network
+
+    # ==========================================
+    # Redis - Distributed Rate Limiting Store
+    # ==========================================
+    redis:
+        image: redis:7-alpine
+        container_name: api-gateway-redis
+        restart: unless-stopped
+        command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy volatile-lru
+
+        volumes:
+            - redis-data:/data
+
+        healthcheck:
+            test: ['CMD', 'redis-cli', 'ping']
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 5s
+
+        deploy:
+            resources:
+                limits:
+                    cpus: '0.5'
+                    memory: 256M
+                reservations:
+                    cpus: '0.1'
+                    memory: 64M
+
+        networks:
+            - gateway-network
 
 # ==========================================
 # Volumes
 # ==========================================
 volumes:
-  redis-data:
-    driver: local
+    redis-data:
+        driver: local
 
 # ==========================================
 # Networks
 # ==========================================
 networks:
-  gateway-network:
-    driver: bridge
+    gateway-network:
+        driver: bridge

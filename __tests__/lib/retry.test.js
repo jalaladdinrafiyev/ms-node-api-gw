@@ -32,7 +32,8 @@ describe('Retry Manager', () => {
         });
 
         test('should retry on retryable errors', async () => {
-            const fn = jest.fn()
+            const fn = jest
+                .fn()
                 .mockRejectedValueOnce({ code: 'ECONNRESET' })
                 .mockResolvedValueOnce('success');
 
@@ -94,7 +95,8 @@ describe('Retry Manager', () => {
         });
 
         test('should retry on errors with retryable message', async () => {
-            const fn = jest.fn()
+            const fn = jest
+                .fn()
                 .mockRejectedValueOnce({ message: 'ECONNRESET: connection reset' })
                 .mockResolvedValueOnce('success');
 
@@ -109,7 +111,7 @@ describe('Retry Manager', () => {
         test('should respect max delay', async () => {
             const fn = jest.fn().mockRejectedValue({ code: 'ETIMEDOUT' });
             const sleepCalls = [];
-            
+
             retryManager.sleep = jest.fn().mockImplementation((ms) => {
                 sleepCalls.push(ms);
                 return Promise.resolve();
@@ -127,7 +129,7 @@ describe('Retry Manager', () => {
             }
 
             // All delays should be <= maxDelay (500) accounting for jitter
-            sleepCalls.forEach(delay => {
+            sleepCalls.forEach((delay) => {
                 expect(delay).toBeLessThanOrEqual(600); // 500 + 20% jitter
             });
         });
@@ -138,7 +140,7 @@ describe('Retry Manager', () => {
             // Get a fresh module without mocked sleep
             jest.resetModules();
             const freshRetryManager = require('../../lib/retry');
-            
+
             const start = Date.now();
             await freshRetryManager.sleep(50); // Short sleep for testing
             const duration = Date.now() - start;
@@ -152,9 +154,9 @@ describe('Retry Manager', () => {
         test('should handle errors without code property', async () => {
             const fn = jest.fn().mockRejectedValue(new Error('Generic error'));
 
-            await expect(
-                retryManager.execute(fn, { maxRetries: 3 })
-            ).rejects.toThrow('Generic error');
+            await expect(retryManager.execute(fn, { maxRetries: 3 })).rejects.toThrow(
+                'Generic error'
+            );
 
             // Should not retry since no code matches retryableErrors
             expect(fn).toHaveBeenCalledTimes(1);
@@ -165,9 +167,7 @@ describe('Retry Manager', () => {
 
             // The retry manager should not retry on null errors (not retryable)
             // and should reject with null
-            await expect(
-                retryManager.execute(fn, { maxRetries: 3 })
-            ).rejects.toBeNull();
+            await expect(retryManager.execute(fn, { maxRetries: 3 })).rejects.toBeNull();
 
             expect(fn).toHaveBeenCalledTimes(1);
         });

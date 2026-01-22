@@ -8,50 +8,50 @@
 version: 2.2.0
 
 routes:
-  # ==========================================
-  # Risk Admin Service
-  # ==========================================
-  - path: /risk-admin
-    upstream: http://host.docker.internal:8080
-    
-    # Health check configuration for this upstream
-    healthPath: /actuator/health
-    
-    # Timeout for this specific route (milliseconds)
-    timeout: 60000
-    
-    # Load balancing strategy: round_robin, random, health_aware
-    loadBalanceStrategy: health_aware
-    
-    # Retry configuration
-    retry: true
-    maxRetries: 3
-    
-    # Plugins
-    plugins:
-      - name: central-auth
-        enabled: true
-        authServiceUrl: http://host.docker.internal:9000
+    # ==========================================
+    # Risk Admin Service
+    # ==========================================
+    - path: /risk-admin
+      upstream: http://host.docker.internal:8080
 
-  # ==========================================
-  # Example: Multiple Upstreams (Load Balanced)
-  # ==========================================
-  # - path: /api/users
-  #   # Comma-separated for multiple upstreams
-  #   upstream: http://user-service-1:8080,http://user-service-2:8080
-  #   healthPath: /health
-  #   loadBalanceStrategy: health_aware
-  #   plugins:
-  #     - name: central-auth
-  #       enabled: true
-  #       authServiceUrl: http://auth-service:9000
+      # Health check configuration for this upstream
+      healthPath: /actuator/health
 
-  # ==========================================
-  # Example: Public Route (No Auth)
-  # ==========================================
-  # - path: /public
-  #   upstream: http://public-service:8080
-  #   healthPath: /health
-  #   plugins:
-  #     - name: central-auth
-  #       enabled: false
+      # Timeout for this specific route (milliseconds)
+      timeout: 60000
+
+      # Load balancing strategy: round_robin, random, health_aware
+      loadBalanceStrategy: health_aware
+
+      # Retry configuration
+      retry: true
+      maxRetries: 3
+
+      # Plugins
+      plugins:
+          - name: central-auth
+            enabled: true
+            authServiceUrl: http://host.docker.internal:9000
+
+    # ==========================================
+    # Example: Multiple Upstreams (Load Balanced)
+    # ==========================================
+    # - path: /api/users
+    #   # Comma-separated for multiple upstreams
+    #   upstream: http://user-service-1:8080,http://user-service-2:8080
+    #   healthPath: /health
+    #   loadBalanceStrategy: health_aware
+    #   plugins:
+    #     - name: central-auth
+    #       enabled: true
+    #       authServiceUrl: http://auth-service:9000
+
+    # ==========================================
+    # Example: Public Route (No Auth)
+    # ==========================================
+    # - path: /public
+    #   upstream: http://public-service:8080
+    #   healthPath: /health
+    #   plugins:
+    #     - name: central-auth
+    #       enabled: false

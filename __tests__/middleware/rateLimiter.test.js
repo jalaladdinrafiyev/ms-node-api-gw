@@ -1,6 +1,14 @@
 const request = require('supertest');
 const express = require('express');
-const { createRateLimiter, globalRateLimiter, strictRateLimiter, initializeRedis, isRedisConnected, getStore, shutdown } = require('../../middleware/rateLimiter');
+const {
+    createRateLimiter,
+    globalRateLimiter,
+    strictRateLimiter,
+    initializeRedis,
+    isRedisConnected,
+    getStore,
+    shutdown
+} = require('../../middleware/rateLimiter');
 const logger = require('../../lib/logger');
 
 describe('Rate Limiter Middleware', () => {
@@ -40,13 +48,13 @@ describe('Rate Limiter Middleware', () => {
             // Use a very short window and explicit store for testing
             const { MemoryStore } = require('express-rate-limit');
             const store = new MemoryStore();
-            
+
             const testLimiter = createRateLimiter({
                 windowMs: 100, // 100ms window for fast tests
                 max: 1, // Only 1 request allowed
                 store: store // Use explicit shared store
             });
-            
+
             // Create a fresh app for this test
             const testApp = express();
             testApp.set('trust proxy', true);
@@ -153,7 +161,7 @@ describe('Rate Limiter Middleware', () => {
                 max: 1,
                 store: store
             });
-            
+
             const testApp = express();
             testApp.set('trust proxy', true);
             testApp.use(testLimiter);
@@ -178,7 +186,7 @@ describe('Rate Limiter Middleware', () => {
                 max: 10,
                 store: store
             });
-            
+
             const testApp = express();
             testApp.set('trust proxy', true);
             testApp.use(testLimiter);
@@ -187,7 +195,9 @@ describe('Rate Limiter Middleware', () => {
             });
 
             // First request should succeed
-            const response1 = await request(testApp).get('/test').set('X-Forwarded-For', '10.0.0.3');
+            const response1 = await request(testApp)
+                .get('/test')
+                .set('X-Forwarded-For', '10.0.0.3');
             expect(response1.status).toBe(200);
 
             // Make 10 more requests quickly (limit is 10, so 11 total)
@@ -216,7 +226,7 @@ describe('Rate Limiter Middleware', () => {
                 message: 'Custom rate limit message',
                 store: store
             });
-            
+
             const testApp = express();
             testApp.set('trust proxy', true);
             testApp.use(customLimiter);
@@ -264,7 +274,7 @@ describe('Rate Limiter Middleware', () => {
                 max: 100,
                 store: store
             });
-            
+
             const testApp = express();
             testApp.use(testLimiter);
             testApp.get('/test', (req, res) => {
@@ -283,7 +293,7 @@ describe('Rate Limiter Middleware', () => {
                 max: 1,
                 store: store
             });
-            
+
             const testApp = express();
             testApp.set('trust proxy', true);
             testApp.use(testLimiter);
@@ -311,7 +321,7 @@ describe('Rate Limiter Middleware', () => {
                 max: 1,
                 store: store
             });
-            
+
             const testApp = express();
             testApp.set('trust proxy', true);
             testApp.use(testLimiter);
@@ -340,7 +350,7 @@ describe('Rate Limiter Middleware', () => {
                 max: 100,
                 store: store
             });
-            
+
             const testApp = express();
             // Don't trust proxy - should use socket address
             testApp.use(testLimiter);
@@ -392,7 +402,7 @@ describe('Rate Limiter Middleware', () => {
                 max: 1,
                 store: store
             });
-            
+
             const testApp = express();
             testApp.set('trust proxy', true);
             testApp.use(testLimiter);
@@ -403,10 +413,13 @@ describe('Rate Limiter Middleware', () => {
             await request(testApp).get('/test').set('X-Forwarded-For', '10.0.0.99');
             await request(testApp).get('/test').set('X-Forwarded-For', '10.0.0.99');
 
-            expect(loggerWarnSpy).toHaveBeenCalledWith('Rate limit exceeded', expect.objectContaining({
-                url: '/test',
-                method: 'GET'
-            }));
+            expect(loggerWarnSpy).toHaveBeenCalledWith(
+                'Rate limit exceeded',
+                expect.objectContaining({
+                    url: '/test',
+                    method: 'GET'
+                })
+            );
         });
 
         test('should include retryAfter in response body', async () => {
@@ -417,7 +430,7 @@ describe('Rate Limiter Middleware', () => {
                 max: 1,
                 store: store
             });
-            
+
             const testApp = express();
             testApp.use(testLimiter);
             testApp.get('/test', (req, res) => {

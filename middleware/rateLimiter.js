@@ -1,13 +1,13 @@
 /**
  * Rate Limiting Middleware
- * 
+ *
  * Prevents DDoS and brute force attacks by limiting
  * requests per IP address within a time window.
- * 
+ *
  * Supports:
  * - In-memory store (development/single instance)
  * - Redis store (production/distributed)
- * 
+ *
  * @module middleware/rateLimiter
  */
 
@@ -27,7 +27,7 @@ let redisStore = null;
  */
 const initializeRedis = async () => {
     const redisUrl = process.env.REDIS_URL;
-    
+
     if (!redisUrl) {
         logger.info('REDIS_URL not configured, using in-memory rate limiting');
         return false;
@@ -55,7 +55,9 @@ const initializeRedis = async () => {
             prefix: 'rl:'
         });
 
-        logger.info('Redis rate limiter initialized', { url: redisUrl.replace(/:[^:@]+@/, ':***@') });
+        logger.info('Redis rate limiter initialized', {
+            url: redisUrl.replace(/:[^:@]+@/, ':***@')
+        });
         return true;
     } catch (error) {
         logger.warn('Failed to connect to Redis, falling back to in-memory rate limiting', {
@@ -123,7 +125,7 @@ const createRateLimiter = (options = {}) => {
         // Only override store if Redis is available, otherwise use caller's store from restOptions
         ...(redisStore ? { store: redisStore } : {}),
         // Disable all validations - we handle these cases properly:
-        // - xForwardedForHeader: we use req.ip which Express normalizes  
+        // - xForwardedForHeader: we use req.ip which Express normalizes
         // - creationStack: we intentionally use lazy init for Redis
         // - keyGeneratorIpFallback: we use req.ip which handles IPv6
         validate: false,
@@ -133,7 +135,7 @@ const createRateLimiter = (options = {}) => {
             // and normalizes IPv6 addresses properly
             return req.ip || '127.0.0.1';
         },
-        
+
         // Custom rate limit exceeded handler
         handler: (req, res) => {
             logger.warn('Rate limit exceeded', {
@@ -148,7 +150,7 @@ const createRateLimiter = (options = {}) => {
                 retryAfter: Math.ceil(windowMs / 1000)
             });
         },
-        
+
         // Skip rate limiting for health and metrics endpoints
         skip: (req) => {
             const skipPaths = ['/health', '/metrics', '/livez', '/readyz', '/startupz'];

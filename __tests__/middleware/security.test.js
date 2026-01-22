@@ -75,9 +75,7 @@ describe('Security Middleware', () => {
                 res.json({ received: req.body });
             });
 
-            const response = await request(app)
-                .post('/test')
-                .send({ test: 'data' });
+            const response = await request(app).post('/test').send({ test: 'data' });
 
             expect(response.status).toBe(200);
             expect(response.body.received).toEqual({ test: 'data' });

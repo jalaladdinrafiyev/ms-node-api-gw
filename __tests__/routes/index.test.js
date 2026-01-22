@@ -1,17 +1,17 @@
 describe('Routes Barrel Exports', () => {
     test('should export all route modules', () => {
         const routes = require('../../routes');
-        
+
         // Health check
         expect(routes.healthCheck).toBeDefined();
         expect(typeof routes.healthCheck).toBe('function');
-        
+
         // Probes
         expect(routes.probes).toBeDefined();
         expect(routes.livenessProbe).toBeDefined();
         expect(routes.readinessProbe).toBeDefined();
         expect(routes.startupProbe).toBeDefined();
-        
+
         // Metrics
         expect(routes.metrics).toBeDefined();
         expect(routes.metricsMiddleware).toBeDefined();

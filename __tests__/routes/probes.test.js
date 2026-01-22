@@ -53,21 +53,27 @@ describe('Kubernetes Probes', () => {
             jest.clearAllMocks();
             circuitBreakerManager.getStats.mockReturnValue({});
             upstreamHealthChecker.getAllHealthStatus.mockReturnValue({});
-            
+
             app = express();
         });
 
         test('should return 200 when routes are loaded', async () => {
-            app.get('/readyz', readinessProbe(() => ({ stack: [] })));
-            
+            app.get(
+                '/readyz',
+                readinessProbe(() => ({ stack: [] }))
+            );
+
             const response = await request(app).get('/readyz');
             expect(response.status).toBe(200);
             expect(response.body.status).toBe('ready');
         });
 
         test('should return 503 when routes are not loaded', async () => {
-            app.get('/readyz', readinessProbe(() => null));
-            
+            app.get(
+                '/readyz',
+                readinessProbe(() => null)
+            );
+
             const response = await request(app).get('/readyz');
             expect(response.status).toBe(503);
             expect(response.body.status).toBe('not_ready');
@@ -78,12 +84,17 @@ describe('Kubernetes Probes', () => {
             circuitBreakerManager.getStats.mockReturnValue({
                 'http://upstream1': { state: 'open' }
             });
-            app.get('/readyz', readinessProbe(() => ({ stack: [] })));
-            
+            app.get(
+                '/readyz',
+                readinessProbe(() => ({ stack: [] }))
+            );
+
             const response = await request(app).get('/readyz');
             expect(response.status).toBe(503);
             expect(response.body.issues).toBeDefined();
-            expect(response.body.issues.some(i => i.includes('Circuit breakers open'))).toBe(true);
+            expect(response.body.issues.some((i) => i.includes('Circuit breakers open'))).toBe(
+                true
+            );
         });
 
         test('should return 503 when all upstreams are unhealthy', async () => {
@@ -91,8 +102,11 @@ describe('Kubernetes Probes', () => {
                 'http://upstream1': { healthy: false },
                 'http://upstream2': { healthy: false }
             });
-            app.get('/readyz', readinessProbe(() => ({ stack: [] })));
-            
+            app.get(
+                '/readyz',
+                readinessProbe(() => ({ stack: [] }))
+            );
+
             const response = await request(app).get('/readyz');
             expect(response.status).toBe(503);
             expect(response.body.issues).toContain('All upstreams unhealthy');
@@ -103,15 +117,21 @@ describe('Kubernetes Probes', () => {
                 'http://upstream1': { healthy: true },
                 'http://upstream2': { healthy: false }
             });
-            app.get('/readyz', readinessProbe(() => ({ stack: [] })));
-            
+            app.get(
+                '/readyz',
+                readinessProbe(() => ({ stack: [] }))
+            );
+
             const response = await request(app).get('/readyz');
             expect(response.status).toBe(200);
         });
 
         test('should include checks summary', async () => {
-            app.get('/readyz', readinessProbe(() => ({ stack: [] })));
-            
+            app.get(
+                '/readyz',
+                readinessProbe(() => ({ stack: [] }))
+            );
+
             const response = await request(app).get('/readyz');
             expect(response.body.checks).toBeDefined();
             expect(response.body.checks.routesLoaded).toBe(true);
@@ -128,24 +148,33 @@ describe('Kubernetes Probes', () => {
 
         test('should return 200 when router is defined (even null means startup complete)', async () => {
             // null router means routes failed to load, but startup is complete
-            app.get('/startupz', startupProbe(() => null));
-            
+            app.get(
+                '/startupz',
+                startupProbe(() => null)
+            );
+
             const response = await request(app).get('/startupz');
             expect(response.status).toBe(200);
             expect(response.body.status).toBe('started');
         });
 
         test('should return 503 when router is undefined (still starting)', async () => {
-            app.get('/startupz', startupProbe(() => undefined));
-            
+            app.get(
+                '/startupz',
+                startupProbe(() => undefined)
+            );
+
             const response = await request(app).get('/startupz');
             expect(response.status).toBe(503);
             expect(response.body.status).toBe('starting');
         });
 
         test('should return 200 when router is loaded', async () => {
-            app.get('/startupz', startupProbe(() => ({ stack: [] })));
-            
+            app.get(
+                '/startupz',
+                startupProbe(() => ({ stack: [] }))
+            );
+
             const response = await request(app).get('/startupz');
             expect(response.status).toBe(200);
             expect(response.body.routesLoaded).toBe(true);

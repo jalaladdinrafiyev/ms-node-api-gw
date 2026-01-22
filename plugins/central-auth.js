@@ -1,9 +1,9 @@
 /**
  * Central Authentication Plugin
- * 
+ *
  * Validates JWT tokens via the Risk Admin Authentication Service.
  * Integrates with /api/v1/authz/verify endpoint.
- * 
+ *
  * @module plugins/central-auth
  */
 
@@ -56,11 +56,11 @@ module.exports = (params) => {
     if (!params || typeof params !== 'object') {
         throw new Error('Plugin params must be an object');
     }
-    
+
     if (params.enabled && !params.authServiceUrl) {
         throw new Error('authServiceUrl is required when plugin is enabled');
     }
-    
+
     // Validate and normalize auth service URL
     let authServiceUrl = params.authServiceUrl;
     if (authServiceUrl && typeof authServiceUrl === 'string') {
@@ -69,7 +69,7 @@ module.exports = (params) => {
             throw new Error('authServiceUrl must be a valid HTTP/HTTPS URL');
         }
     }
-    
+
     /**
      * Middleware function - runs for every request
      */
@@ -82,19 +82,21 @@ module.exports = (params) => {
         // Extract authorization header (case-insensitive)
         const authHeader = req.headers['authorization'] || req.headers['Authorization'];
         if (!authHeader || typeof authHeader !== 'string') {
-            return res.status(401).json({ 
+            return res.status(401).json({
                 status: 'fail',
                 error: 'UNAUTHORIZED',
-                errorDetails: [{
-                    message: 'Authorization header is required'
-                }]
+                errorDetails: [
+                    {
+                        message: 'Authorization header is required'
+                    }
+                ]
             });
         }
 
         try {
             // Build headers to forward to auth service
             const forwardHeaders = {
-                'Authorization': authHeader,
+                Authorization: authHeader,
                 'X-Original-URI': req.originalUrl || req.url,
                 'X-Original-Method': req.method || 'GET',
                 'Content-Type': 'application/json'
@@ -116,10 +118,11 @@ module.exports = (params) => {
             );
 
             // Success: HTTP 200-299 AND verifyStatus: true
-            if (response.status >= 200 && 
-                response.status < 300 && 
-                response.data?.data?.verifyStatus === true) {
-                
+            if (
+                response.status >= 200 &&
+                response.status < 300 &&
+                response.data?.data?.verifyStatus === true
+            ) {
                 // Extract userId (can be string or number)
                 const userId = response.data.data.userId;
                 if (userId !== undefined && userId !== null) {
@@ -131,29 +134,31 @@ module.exports = (params) => {
                         method: req.method
                     });
                 }
-                
+
                 // Strip Authorization header before forwarding to downstream
                 delete req.headers['authorization'];
                 delete req.headers['Authorization'];
-                
+
                 // Continue to next middleware/proxy
                 return next();
             }
-            
+
             // Auth failed - forward the exact response from auth service
             // This preserves localized error messages from ms-i18n
-            const statusCode = response.status >= 400 && response.status < 500 
-                ? response.status 
-                : 401;
-            
-            return res.status(statusCode).json(response.data || { 
-                status: 'fail',
-                error: 'UNAUTHORIZED',
-                errorDetails: [{
-                    message: 'Authentication failed'
-                }]
-            });
+            const statusCode =
+                response.status >= 400 && response.status < 500 ? response.status : 401;
 
+            return res.status(statusCode).json(
+                response.data || {
+                    status: 'fail',
+                    error: 'UNAUTHORIZED',
+                    errorDetails: [
+                        {
+                            message: 'Authentication failed'
+                        }
+                    ]
+                }
+            );
         } catch (error) {
             // Network/connection errors
             const errorContext = {
@@ -166,34 +171,40 @@ module.exports = (params) => {
 
             if (error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT') {
                 logger.error('Auth Service unreachable', errorContext);
-                return res.status(502).json({ 
+                return res.status(502).json({
                     status: 'fail',
                     error: 'AUTH_SERVICE_UNAVAILABLE',
-                    errorDetails: [{
-                        message: 'Authentication service is not responding'
-                    }]
+                    errorDetails: [
+                        {
+                            message: 'Authentication service is not responding'
+                        }
+                    ]
                 });
             }
-            
+
             if (error.code === 'ENOTFOUND') {
                 logger.error('Auth Service host not found', errorContext);
-                return res.status(502).json({ 
+                return res.status(502).json({
                     status: 'fail',
                     error: 'AUTH_SERVICE_UNAVAILABLE',
-                    errorDetails: [{
-                        message: 'Authentication service host not found'
-                    }]
+                    errorDetails: [
+                        {
+                            message: 'Authentication service host not found'
+                        }
+                    ]
                 });
             }
-            
+
             // Generic error
             logger.error('Auth Service Error', { ...errorContext, stack: error.stack });
-            return res.status(502).json({ 
+            return res.status(502).json({
                 status: 'fail',
                 error: 'AUTH_SERVICE_UNAVAILABLE',
-                errorDetails: [{
-                    message: 'An error occurred while authenticating'
-                }]
+                errorDetails: [
+                    {
+                        message: 'An error occurred while authenticating'
+                    }
+                ]
             });
         }
     };

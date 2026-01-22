@@ -61,7 +61,7 @@ describe('Route Builder', () => {
             }
         ];
 
-        const router = buildRouter(routes);
+        const _router = buildRouter(routes);
         expect(loadPlugin).toHaveBeenCalledWith('test-plugin', {
             name: 'test-plugin',
             enabled: true,
@@ -83,7 +83,7 @@ describe('Route Builder', () => {
             }
         ];
 
-        const router = buildRouter(routes);
+        const _router = buildRouter(routes);
         expect(loadPlugin).not.toHaveBeenCalled();
     });
 
@@ -116,25 +116,22 @@ describe('Route Builder', () => {
         expect(router).toBeDefined();
     });
 
-        test('should support multiple upstreams for load balancing', () => {
-            // Clear previous calls
-            upstreamHealthChecker.startMonitoring.mockClear();
-            
-            const routes = [
-                {
-                    path: '/test',
-                    upstream: [
-                        'http://localhost:8080',
-                        'http://localhost:8081'
-                    ]
-                }
-            ];
+    test('should support multiple upstreams for load balancing', () => {
+        // Clear previous calls
+        upstreamHealthChecker.startMonitoring.mockClear();
 
-            const router = buildRouter(routes);
-            expect(router).toBeDefined();
-            // Should be called for each upstream
-            expect(upstreamHealthChecker.startMonitoring.mock.calls.length).toBeGreaterThanOrEqual(2);
-        });
+        const routes = [
+            {
+                path: '/test',
+                upstream: ['http://localhost:8080', 'http://localhost:8081']
+            }
+        ];
+
+        const router = buildRouter(routes);
+        expect(router).toBeDefined();
+        // Should be called for each upstream
+        expect(upstreamHealthChecker.startMonitoring.mock.calls.length).toBeGreaterThanOrEqual(2);
+    });
 
     test('should start health monitoring for upstreams', () => {
         const routes = [

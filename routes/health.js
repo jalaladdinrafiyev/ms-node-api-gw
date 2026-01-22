@@ -8,39 +8,36 @@ const upstreamHealthChecker = require('../lib/upstreamHealth');
  */
 const healthCheck = (getRouter) => {
     // Support both function and direct router patterns
-    const getRouterValue = typeof getRouter === 'function' 
-        ? getRouter 
-        : () => getRouter;
-    
+    const getRouterValue = typeof getRouter === 'function' ? getRouter : () => getRouter;
+
     return (req, res) => {
         const router = getRouterValue();
         const timestamp = new Date().toISOString();
         const memoryUsage = process.memoryUsage();
-        
+
         // Get circuit breaker stats
         const circuitBreakerStats = circuitBreakerManager.getStats();
-        
+
         // Get upstream health status
         const upstreamHealth = upstreamHealthChecker.getAllHealthStatus();
-        
+
         // Determine overall health
         // Gateway is healthy if no circuit breakers are open and no upstreams are unhealthy
         // Router being null just means routes aren't loaded yet, but gateway itself is healthy
         const hasOpenCircuitBreakers = Object.values(circuitBreakerStats).some(
-            stats => stats.state === 'open'
+            (stats) => stats.state === 'open'
         );
         const hasUnhealthyUpstreams = Object.values(upstreamHealth).some(
-            status => !status.healthy
+            (status) => !status.healthy
         );
-        
+
         // Only mark as degraded if there are actual problems (open circuits or unhealthy upstreams)
         // Router being null is not a health issue, just a configuration state
-        const overallStatus = (hasOpenCircuitBreakers || hasUnhealthyUpstreams) 
-            ? 'degraded' 
-            : 'healthy';
-        
+        const overallStatus =
+            hasOpenCircuitBreakers || hasUnhealthyUpstreams ? 'degraded' : 'healthy';
+
         const statusCode = overallStatus === 'healthy' ? 200 : 503;
-        
+
         res.status(statusCode).json({
             status: overallStatus,
             timestamp,

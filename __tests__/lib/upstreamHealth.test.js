@@ -5,12 +5,12 @@ const logger = require('../../lib/logger');
 jest.mock('axios');
 
 describe('Upstream Health Checker', () => {
-    let loggerInfoSpy, loggerWarnSpy, loggerDebugSpy;
+    let loggerInfoSpy, _loggerWarnSpy, _loggerDebugSpy;
 
     beforeEach(() => {
         loggerInfoSpy = jest.spyOn(logger, 'info').mockImplementation();
-        loggerWarnSpy = jest.spyOn(logger, 'warn').mockImplementation();
-        loggerDebugSpy = jest.spyOn(logger, 'debug').mockImplementation();
+        _loggerWarnSpy = jest.spyOn(logger, 'warn').mockImplementation();
+        _loggerDebugSpy = jest.spyOn(logger, 'debug').mockImplementation();
         upstreamHealthChecker.stopAll(); // Clean up any existing monitoring
     });
 
@@ -83,7 +83,7 @@ describe('Upstream Health Checker', () => {
             upstreamHealthChecker.startMonitoring('http://test.com');
 
             // Wait a bit for initial check
-            await new Promise(resolve => setTimeout(resolve, 100));
+            await new Promise((resolve) => setTimeout(resolve, 100));
 
             expect(axios.get).toHaveBeenCalled();
             expect(loggerInfoSpy).toHaveBeenCalledWith(

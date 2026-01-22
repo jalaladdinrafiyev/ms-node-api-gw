@@ -32,18 +32,18 @@ describe('Graceful Shutdown', () => {
     beforeEach(() => {
         // Reset modules to get fresh shutdown state (isShuttingDown flag)
         jest.resetModules();
-        
+
         // Re-apply mocks after reset
         jest.doMock('../../lib/logger', () => mockLogger);
         jest.doMock('../../lib/upstreamHealth', () => ({
             stopAll: jest.fn()
         }));
-        
+
         // Get fresh modules
         const shutdownModule = require('../../lib/shutdown');
         setupGracefulShutdown = shutdownModule.setupGracefulShutdown;
         upstreamHealthChecker = require('../../lib/upstreamHealth');
-        
+
         // Clear mock call history
         mockLogger.info.mockClear();
         mockLogger.error.mockClear();
@@ -59,7 +59,7 @@ describe('Graceful Shutdown', () => {
         mockWatcher = {
             close: jest.fn().mockResolvedValue(undefined)
         };
-        
+
         // Clear all process listeners
         process.removeAllListeners('SIGTERM');
         process.removeAllListeners('SIGINT');
@@ -94,7 +94,7 @@ describe('Graceful Shutdown', () => {
             process.emit('SIGTERM');
 
             // Wait for async operations
-            await new Promise(resolve => setTimeout(resolve, 200));
+            await new Promise((resolve) => setTimeout(resolve, 200));
 
             expect(mockServer.close).toHaveBeenCalled();
         });
@@ -104,7 +104,7 @@ describe('Graceful Shutdown', () => {
 
             process.emit('SIGTERM');
 
-            await new Promise(resolve => setTimeout(resolve, 200));
+            await new Promise((resolve) => setTimeout(resolve, 200));
 
             expect(mockWatcher.close).toHaveBeenCalled();
         });
@@ -114,7 +114,7 @@ describe('Graceful Shutdown', () => {
 
             process.emit('SIGTERM');
 
-            await new Promise(resolve => setTimeout(resolve, 200));
+            await new Promise((resolve) => setTimeout(resolve, 200));
 
             expect(upstreamHealthChecker.stopAll).toHaveBeenCalled();
         });
@@ -124,7 +124,7 @@ describe('Graceful Shutdown', () => {
 
             process.emit('SIGTERM');
 
-            await new Promise(resolve => setTimeout(resolve, 200));
+            await new Promise((resolve) => setTimeout(resolve, 200));
 
             expect(mockWatcher.close).toHaveBeenCalled();
         });
@@ -134,7 +134,7 @@ describe('Graceful Shutdown', () => {
 
             process.emit('SIGTERM');
 
-            await new Promise(resolve => setTimeout(resolve, 200));
+            await new Promise((resolve) => setTimeout(resolve, 200));
 
             expect(mockServer.close).toHaveBeenCalled();
         });
@@ -146,7 +146,7 @@ describe('Graceful Shutdown', () => {
             process.emit('SIGTERM');
             process.emit('SIGTERM');
 
-            await new Promise(resolve => setTimeout(resolve, 200));
+            await new Promise((resolve) => setTimeout(resolve, 200));
 
             // Should log warning about already shutting down
             expect(mockLogger.warn).toHaveBeenCalledWith(
@@ -161,7 +161,7 @@ describe('Graceful Shutdown', () => {
             const error = new Error('Uncaught exception');
             process.emit('uncaughtException', error);
 
-            await new Promise(resolve => setTimeout(resolve, 200));
+            await new Promise((resolve) => setTimeout(resolve, 200));
 
             expect(mockLogger.error).toHaveBeenCalledWith(
                 expect.stringContaining('Uncaught Exception'),
@@ -175,7 +175,7 @@ describe('Graceful Shutdown', () => {
             const reason = new Error('Unhandled rejection');
             process.emit('unhandledRejection', reason, Promise.resolve());
 
-            await new Promise(resolve => setTimeout(resolve, 200));
+            await new Promise((resolve) => setTimeout(resolve, 200));
 
             expect(mockLogger.error).toHaveBeenCalledWith(
                 expect.stringContaining('Unhandled Rejection'),
@@ -192,7 +192,7 @@ describe('Graceful Shutdown', () => {
 
             process.emit('SIGTERM');
 
-            await new Promise(resolve => setTimeout(resolve, 200));
+            await new Promise((resolve) => setTimeout(resolve, 200));
 
             expect(mockLogger.error).toHaveBeenCalledWith(
                 expect.stringContaining('Error closing server'),
@@ -205,7 +205,7 @@ describe('Graceful Shutdown', () => {
 
             process.emit('SIGTERM');
 
-            await new Promise(resolve => setTimeout(resolve, 300));
+            await new Promise((resolve) => setTimeout(resolve, 300));
 
             expect(mockExit).toHaveBeenCalledWith(0);
         });

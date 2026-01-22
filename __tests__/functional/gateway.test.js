@@ -1,7 +1,11 @@
 const request = require('supertest');
 const express = require('express');
 const requestLogger = require('../../middleware/requestLogger');
-const { notFoundHandler, globalErrorHandler, gatewayNotConfiguredHandler } = require('../../middleware/errorHandler');
+const {
+    notFoundHandler,
+    globalErrorHandler,
+    gatewayNotConfiguredHandler
+} = require('../../middleware/errorHandler');
 const { loadConfig } = require('../../lib/configLoader');
 const healthCheck = require('../../routes/health');
 const circuitBreakerManager = require('../../lib/circuitBreaker');
@@ -25,7 +29,7 @@ describe('Gateway Functional Tests', () => {
         // Reset circuit breakers and health checkers
         circuitBreakerManager.resetAll();
         upstreamHealthChecker.stopAll();
-        
+
         // Mock upstream health to return empty (no unhealthy upstreams)
         jest.spyOn(upstreamHealthChecker, 'getAllHealthStatus').mockReturnValue({});
 
@@ -34,7 +38,10 @@ describe('Gateway Functional Tests', () => {
         app.use(requestLogger);
 
         // Setup health check
-        app.get('/health', healthCheck(() => dynamicRouter));
+        app.get(
+            '/health',
+            healthCheck(() => dynamicRouter)
+        );
 
         // Setup main router
         app.use((req, res, next) => {
@@ -60,7 +67,7 @@ describe('Gateway Functional Tests', () => {
     describe('Health Check Endpoint', () => {
         test('GET /health should return 200', async () => {
             const response = await request(app).get('/health');
-            
+
             expect(response.status).toBe(200);
             expect(response.body.status).toBe('healthy');
             expect(response.body).toHaveProperty('timestamp');
@@ -70,7 +77,7 @@ describe('Gateway Functional Tests', () => {
 
         test('GET /health should indicate routes not loaded initially', async () => {
             const response = await request(app).get('/health');
-            
+
             expect(response.body.routes).toBe('not loaded');
         });
     });
@@ -78,7 +85,7 @@ describe('Gateway Functional Tests', () => {
     describe('Gateway Not Configured', () => {
         test('should return 503 when no routes are loaded', async () => {
             const response = await request(app).get('/any-route');
-            
+
             expect(response.status).toBe(503);
             expect(response.body.error).toBe('Gateway not configured');
         });
@@ -101,7 +108,7 @@ describe('Gateway Functional Tests', () => {
             dynamicRouter = loadConfig(testConfigPath);
 
             const response = await request(app).get('/nonexistent-route');
-            
+
             expect(response.status).toBe(404);
             expect(response.body.error).toBe('Not Found');
             expect(response.body.message).toContain('nonexistent-route');
@@ -120,7 +127,7 @@ describe('Gateway Functional Tests', () => {
             dynamicRouter = errorRouter;
 
             const response = await request(app).get('/error');
-            
+
             expect(response.status).toBe(500);
             expect(response.body.error).toBe('Internal Server Error');
         });
@@ -138,9 +145,9 @@ describe('Gateway Functional Tests', () => {
             dynamicRouter = errorRouter;
 
             const response = await request(app).get('/error');
-            
+
             expect(response.body.message).toBe('Test error message');
-            
+
             process.env.NODE_ENV = originalEnv;
         });
     });
@@ -149,11 +156,11 @@ describe('Gateway Functional Tests', () => {
         test('should log requests', async () => {
             const logger = require('../../lib/logger');
             const loggerInfoSpy = jest.spyOn(logger, 'info').mockImplementation();
-            
+
             await request(app).get('/health');
-            
+
             expect(loggerInfoSpy).toHaveBeenCalled();
-            
+
             loggerInfoSpy.mockRestore();
         });
     });
@@ -165,7 +172,7 @@ describe('Gateway Functional Tests', () => {
             testApp.get('/metrics', metricsHandler);
 
             const response = await request(testApp).get('/metrics');
-            
+
             expect(response.status).toBe(200);
             expect(response.headers['content-type']).toContain('text/plain');
         });
@@ -174,7 +181,7 @@ describe('Gateway Functional Tests', () => {
     describe('Enhanced Health Endpoint', () => {
         test('should include circuit breaker stats', async () => {
             const response = await request(app).get('/health');
-            
+
             expect(response.status).toBe(200);
             expect(response.body).toHaveProperty('circuitBreakers');
             expect(response.body).toHaveProperty('upstreams');

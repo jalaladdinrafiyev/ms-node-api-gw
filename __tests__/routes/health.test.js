@@ -92,7 +92,7 @@ describe('Health Check Route', () => {
         expect(response.circuitBreakers).toBeDefined();
     });
 
-    test('should include upstream health status', async () => {
+    test('should include upstream health status', () => {
         // Mock upstream health checker
         jest.spyOn(upstreamHealthChecker, 'getAllHealthStatus').mockReturnValue({
             'http://test.com': {
@@ -114,7 +114,7 @@ describe('Health Check Route', () => {
     test('should return degraded status when circuit breakers are open', () => {
         // Mock getAllHealthStatus to return empty (no unhealthy upstreams)
         upstreamHealthChecker.getAllHealthStatus.mockReturnValue({});
-        
+
         // Mock getStats to return an open circuit breaker
         jest.spyOn(circuitBreakerManager, 'getStats').mockReturnValue({
             'http://test.com': {
@@ -130,7 +130,7 @@ describe('Health Check Route', () => {
         expect(res.status).toHaveBeenCalledWith(503);
         const response = res.json.mock.calls[0][0];
         expect(response.status).toBe('degraded');
-        
+
         // Restore the original method
         circuitBreakerManager.getStats.mockRestore();
     });

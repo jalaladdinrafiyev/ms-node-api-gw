@@ -1,7 +1,7 @@
 describe('Lib Barrel Exports', () => {
     test('should export all lib modules', () => {
         const lib = require('../../lib');
-        
+
         expect(lib.config).toBeDefined();
         expect(lib.errors).toBeDefined();
         expect(lib.circuitBreaker).toBeDefined();

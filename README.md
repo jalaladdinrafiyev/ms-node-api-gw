@@ -76,8 +76,8 @@ http://user-service:8080/123
 ```yaml
 # gateway.yaml
 routes:
-  - path: /api/products
-    upstream: http://product-service:8080
+    - path: /api/products
+      upstream: http://product-service:8080
 ```
 
 ```bash
@@ -92,12 +92,12 @@ curl http://localhost:3000/api/products
 ```yaml
 # gateway.yaml
 routes:
-  - path: /api/orders
-    upstream: http://order-service:8080
-    plugins:
-      - name: central-auth
-        enabled: true
-        authServiceUrl: http://auth-service:9000
+    - path: /api/orders
+      upstream: http://order-service:8080
+      plugins:
+          - name: central-auth
+            enabled: true
+            authServiceUrl: http://auth-service:9000
 ```
 
 ```bash
@@ -117,13 +117,14 @@ curl -H "Authorization: Bearer eyJhbGc..." \
 ```yaml
 # gateway.yaml
 routes:
-  - path: /api/search
-    upstream: http://search-1:8080,http://search-2:8080,http://search-3:8080
-    loadBalanceStrategy: health_aware
-    healthPath: /health
+    - path: /api/search
+      upstream: http://search-1:8080,http://search-2:8080,http://search-3:8080
+      loadBalanceStrategy: health_aware
+      healthPath: /health
 ```
 
 Gateway automatically:
+
 - Monitors health of all backends
 - Routes traffic to healthy instances
 - Opens circuit breaker if a backend fails repeatedly
@@ -133,11 +134,11 @@ Gateway automatically:
 ```yaml
 # gateway.yaml
 routes:
-  - path: /api/payments
-    upstream: http://payment-service:8080
-    timeout: 30000        # 30 second timeout
-    maxRetries: 3         # Retry up to 3 times on failure
-    retry: true
+    - path: /api/payments
+      upstream: http://payment-service:8080
+      timeout: 30000 # 30 second timeout
+      maxRetries: 3 # Retry up to 3 times on failure
+      retry: true
 ```
 
 ### Complete Example: E-commerce Setup
@@ -149,38 +150,38 @@ routes:
 version: 2.2.0
 
 routes:
-  # Public auth endpoints - no authentication needed
-  - path: /auth
-    upstream: http://auth-service:9000
-    timeout: 5000
-    
-  # Products API - public read access
-  - path: /api/products
-    upstream: http://product-service:8080
-    healthPath: /actuator/health
-    loadBalanceStrategy: round_robin
-    
-  # Orders API - requires authentication
-  - path: /api/orders
-    upstream: http://order-service-1:8080,http://order-service-2:8080
-    loadBalanceStrategy: health_aware
-    healthPath: /health
-    timeout: 15000
-    maxRetries: 2
-    plugins:
-      - name: central-auth
-        enabled: true
-        authServiceUrl: http://auth-service:9000
-        
-  # Admin API - requires authentication, stricter settings
-  - path: /admin
-    upstream: http://admin-service:8080
-    timeout: 30000
-    maxRetries: 1
-    plugins:
-      - name: central-auth
-        enabled: true
-        authServiceUrl: http://auth-service:9000
+    # Public auth endpoints - no authentication needed
+    - path: /auth
+      upstream: http://auth-service:9000
+      timeout: 5000
+
+    # Products API - public read access
+    - path: /api/products
+      upstream: http://product-service:8080
+      healthPath: /actuator/health
+      loadBalanceStrategy: round_robin
+
+    # Orders API - requires authentication
+    - path: /api/orders
+      upstream: http://order-service-1:8080,http://order-service-2:8080
+      loadBalanceStrategy: health_aware
+      healthPath: /health
+      timeout: 15000
+      maxRetries: 2
+      plugins:
+          - name: central-auth
+            enabled: true
+            authServiceUrl: http://auth-service:9000
+
+    # Admin API - requires authentication, stricter settings
+    - path: /admin
+      upstream: http://admin-service:8080
+      timeout: 30000
+      maxRetries: 1
+      plugins:
+          - name: central-auth
+            enabled: true
+            authServiceUrl: http://auth-service:9000
 ```
 
 **Client Usage:**
@@ -266,118 +267,118 @@ Routes are configured in `gateway.yaml`:
 version: 2.2.0
 
 routes:
-  # Simple route
-  - path: /api/users
-    upstream: http://user-service:8080
-    healthPath: /actuator/health
+    # Simple route
+    - path: /api/users
+      upstream: http://user-service:8080
+      healthPath: /actuator/health
 
-  # Protected route with authentication
-  - path: /api/orders
-    upstream: http://order-service:8080
-    healthPath: /health
-    plugins:
-      - name: central-auth
-        enabled: true
-        authServiceUrl: http://auth-service:9000
+    # Protected route with authentication
+    - path: /api/orders
+      upstream: http://order-service:8080
+      healthPath: /health
+      plugins:
+          - name: central-auth
+            enabled: true
+            authServiceUrl: http://auth-service:9000
 
-  # Load-balanced route with multiple upstreams
-  - path: /api/products
-    upstream: http://product-service-1:8080,http://product-service-2:8080
-    loadBalanceStrategy: health_aware
-    healthPath: /actuator/health
-    timeout: 10000
-    maxRetries: 3
+    # Load-balanced route with multiple upstreams
+    - path: /api/products
+      upstream: http://product-service-1:8080,http://product-service-2:8080
+      loadBalanceStrategy: health_aware
+      healthPath: /actuator/health
+      timeout: 10000
+      maxRetries: 3
 ```
 
 ### Route Configuration Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `path` | string | required | URL path prefix to match |
-| `upstream` | string/array | required | Backend service URL(s) |
-| `healthPath` | string | `/health` | Custom health check path for upstream |
-| `timeout` | number | `30000` | Request timeout in milliseconds |
-| `maxRetries` | number | `3` | Max retry attempts on failure |
-| `retry` | boolean | `true` | Enable/disable retry logic |
-| `loadBalanceStrategy` | string | `health_aware` | Load balancing strategy |
-| `plugins` | array | `[]` | List of plugins to apply |
+| Option                | Type         | Default        | Description                           |
+| --------------------- | ------------ | -------------- | ------------------------------------- |
+| `path`                | string       | required       | URL path prefix to match              |
+| `upstream`            | string/array | required       | Backend service URL(s)                |
+| `healthPath`          | string       | `/health`      | Custom health check path for upstream |
+| `timeout`             | number       | `30000`        | Request timeout in milliseconds       |
+| `maxRetries`          | number       | `3`            | Max retry attempts on failure         |
+| `retry`               | boolean      | `true`         | Enable/disable retry logic            |
+| `loadBalanceStrategy` | string       | `health_aware` | Load balancing strategy               |
+| `plugins`             | array        | `[]`           | List of plugins to apply              |
 
 ### Load Balancing Strategies
 
-| Strategy | Description |
-|----------|-------------|
+| Strategy       | Description                                       |
+| -------------- | ------------------------------------------------- |
 | `health_aware` | Prefers healthy upstreams, round-robin among them |
-| `round_robin` | Cycles through upstreams sequentially |
-| `random` | Random upstream selection |
+| `round_robin`  | Cycles through upstreams sequentially             |
+| `random`       | Random upstream selection                         |
 
 ## Environment Variables
 
 ### Core Settings
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `PORT` | `3000` | Gateway listen port |
-| `NODE_ENV` | `development` | Environment mode |
+| Variable              | Default          | Description                 |
+| --------------------- | ---------------- | --------------------------- |
+| `PORT`                | `3000`           | Gateway listen port         |
+| `NODE_ENV`            | `development`    | Environment mode            |
 | `GATEWAY_CONFIG_PATH` | `./gateway.yaml` | Path to route configuration |
 
 ### Security
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `TRUST_PROXY` | `false` | Trust X-Forwarded-For header |
-| `CORS_ORIGIN` | `*` | Allowed CORS origins (comma-separated) |
-| `CORS_CREDENTIALS` | `true` | Allow credentials in CORS |
-| `REQUEST_BODY_LIMIT` | `10mb` | Max request body size |
+| Variable             | Default | Description                            |
+| -------------------- | ------- | -------------------------------------- |
+| `TRUST_PROXY`        | `false` | Trust X-Forwarded-For header           |
+| `CORS_ORIGIN`        | `*`     | Allowed CORS origins (comma-separated) |
+| `CORS_CREDENTIALS`   | `true`  | Allow credentials in CORS              |
+| `REQUEST_BODY_LIMIT` | `10mb`  | Max request body size                  |
 
 ### Rate Limiting
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `REDIS_URL` | - | Redis URL for distributed rate limiting |
-| `RATE_LIMIT_MAX` | `100` | Max requests per window |
-| `RATE_LIMIT_WINDOW_MS` | `60000` | Rate limit window (ms) |
-| `RATE_LIMIT_STRICT_MAX` | `10` | Strict rate limit for sensitive endpoints |
+| Variable                | Default | Description                               |
+| ----------------------- | ------- | ----------------------------------------- |
+| `REDIS_URL`             | -       | Redis URL for distributed rate limiting   |
+| `RATE_LIMIT_MAX`        | `100`   | Max requests per window                   |
+| `RATE_LIMIT_WINDOW_MS`  | `60000` | Rate limit window (ms)                    |
+| `RATE_LIMIT_STRICT_MAX` | `10`    | Strict rate limit for sensitive endpoints |
 
 ### Timeouts
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `REQUEST_TIMEOUT_MS` | `15000` | Client request timeout |
-| `UPSTREAM_TIMEOUT_MS` | `30000` | Upstream proxy timeout |
-| `SHUTDOWN_TIMEOUT_MS` | `30000` | Graceful shutdown timeout |
-| `HEALTH_CHECK_TIMEOUT_MS` | `5000` | Health check timeout |
+| Variable                  | Default | Description               |
+| ------------------------- | ------- | ------------------------- |
+| `REQUEST_TIMEOUT_MS`      | `15000` | Client request timeout    |
+| `UPSTREAM_TIMEOUT_MS`     | `30000` | Upstream proxy timeout    |
+| `SHUTDOWN_TIMEOUT_MS`     | `30000` | Graceful shutdown timeout |
+| `HEALTH_CHECK_TIMEOUT_MS` | `5000`  | Health check timeout      |
 
 ### Retry & Circuit Breaker
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `MAX_RETRIES` | `3` | Retry attempts for failures |
-| `RETRY_INITIAL_DELAY_MS` | `100` | Initial retry delay |
-| `RETRY_MAX_DELAY_MS` | `10000` | Maximum retry delay |
-| `CIRCUIT_BREAKER_TIMEOUT_MS` | `10000` | Circuit breaker timeout |
-| `CIRCUIT_BREAKER_ERROR_THRESHOLD` | `50` | Error % to open circuit |
-| `CIRCUIT_BREAKER_RESET_TIMEOUT_MS` | `30000` | Time before half-open |
+| Variable                           | Default | Description                 |
+| ---------------------------------- | ------- | --------------------------- |
+| `MAX_RETRIES`                      | `3`     | Retry attempts for failures |
+| `RETRY_INITIAL_DELAY_MS`           | `100`   | Initial retry delay         |
+| `RETRY_MAX_DELAY_MS`               | `10000` | Maximum retry delay         |
+| `CIRCUIT_BREAKER_TIMEOUT_MS`       | `10000` | Circuit breaker timeout     |
+| `CIRCUIT_BREAKER_ERROR_THRESHOLD`  | `50`    | Error % to open circuit     |
+| `CIRCUIT_BREAKER_RESET_TIMEOUT_MS` | `30000` | Time before half-open       |
 
 ### Health Checks
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `HEALTH_CHECK_INTERVAL_MS` | `30000` | Upstream health check interval |
-| `HEALTH_CHECK_UNHEALTHY_THRESHOLD` | `3` | Failures before unhealthy |
-| `HEALTH_CHECK_HEALTHY_THRESHOLD` | `2` | Successes before healthy |
+| Variable                           | Default | Description                    |
+| ---------------------------------- | ------- | ------------------------------ |
+| `HEALTH_CHECK_INTERVAL_MS`         | `30000` | Upstream health check interval |
+| `HEALTH_CHECK_UNHEALTHY_THRESHOLD` | `3`     | Failures before unhealthy      |
+| `HEALTH_CHECK_HEALTHY_THRESHOLD`   | `2`     | Successes before healthy       |
 
 ### Connection Pool
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `MAX_SOCKETS` | `256` | Max concurrent connections per upstream |
-| `MAX_FREE_SOCKETS` | `64` | Max idle connections to keep |
+| Variable           | Default | Description                             |
+| ------------------ | ------- | --------------------------------------- |
+| `MAX_SOCKETS`      | `256`   | Max concurrent connections per upstream |
+| `MAX_FREE_SOCKETS` | `64`    | Max idle connections to keep            |
 
 ### Logging
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `LOG_LEVEL` | `info` | Logging level (error, warn, info, debug) |
+| Variable    | Default | Description                              |
+| ----------- | ------- | ---------------------------------------- |
+| `LOG_LEVEL` | `info`  | Logging level (error, warn, info, debug) |
 
 ## API Endpoints
 
@@ -391,26 +392,26 @@ Returns comprehensive gateway status:
 
 ```json
 {
-  "status": "healthy",
-  "timestamp": "2026-01-22T15:30:00.000Z",
-  "uptime": 3600,
-  "routes": "loaded",
-  "memory": {
-    "rss": "45.23 MB",
-    "heapUsed": "22.15 MB"
-  },
-  "circuitBreakers": {
-    "http://api-server:8080": {
-      "state": "closed",
-      "failures": 0
+    "status": "healthy",
+    "timestamp": "2026-01-22T15:30:00.000Z",
+    "uptime": 3600,
+    "routes": "loaded",
+    "memory": {
+        "rss": "45.23 MB",
+        "heapUsed": "22.15 MB"
+    },
+    "circuitBreakers": {
+        "http://api-server:8080": {
+            "state": "closed",
+            "failures": 0
+        }
+    },
+    "upstreams": {
+        "http://api-server:8080": {
+            "healthy": true,
+            "lastCheck": "2026-01-22T15:29:30.000Z"
+        }
     }
-  },
-  "upstreams": {
-    "http://api-server:8080": {
-      "healthy": true,
-      "lastCheck": "2026-01-22T15:29:30.000Z"
-    }
-  }
 }
 ```
 
@@ -422,22 +423,24 @@ GET /readyz    # Readiness probe - is the gateway ready to serve traffic?
 ```
 
 **Liveness Response:**
+
 ```json
 {
-  "status": "ok",
-  "timestamp": "2026-01-22T15:30:00.000Z"
+    "status": "ok",
+    "timestamp": "2026-01-22T15:30:00.000Z"
 }
 ```
 
 **Readiness Response:**
+
 ```json
 {
-  "status": "ready",
-  "timestamp": "2026-01-22T15:30:00.000Z",
-  "checks": {
-    "routes": "loaded",
-    "memory": "ok"
-  }
+    "status": "ready",
+    "timestamp": "2026-01-22T15:30:00.000Z",
+    "checks": {
+        "routes": "loaded",
+        "memory": "ok"
+    }
 }
 ```
 
@@ -497,13 +500,14 @@ Upstream Service
 
 The gateway automatically generates and propagates request correlation IDs:
 
-| Header | Description |
-|--------|-------------|
-| `X-Request-ID` | Unique request identifier |
+| Header             | Description                         |
+| ------------------ | ----------------------------------- |
+| `X-Request-ID`     | Unique request identifier           |
 | `X-Correlation-ID` | Propagated from client or generated |
-| `X-Trace-ID` | Propagated for distributed tracing |
+| `X-Trace-ID`       | Propagated for distributed tracing  |
 
 These headers are:
+
 - Generated if not present in the incoming request
 - Propagated to upstream services
 - Included in all log entries
@@ -516,6 +520,7 @@ These headers are:
 ### Docker Compose (Recommended)
 
 The production Docker Compose setup includes:
+
 - API Gateway container
 - Redis for distributed rate limiting
 - Resource limits and health checks
@@ -544,50 +549,50 @@ docker compose -f docker-compose.prod.yml down
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: api-gateway
+    name: api-gateway
 spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: api-gateway
-  template:
-    metadata:
-      labels:
-        app: api-gateway
-    spec:
-      containers:
-      - name: api-gateway
-        image: api-gateway:1.0.0
-        ports:
-        - containerPort: 3000
-        env:
-        - name: NODE_ENV
-          value: "production"
-        - name: REDIS_URL
-          value: "redis://redis:6379"
-        - name: TRUST_PROXY
-          value: "true"
-        - name: CORS_ORIGIN
-          value: "https://app.example.com"
-        livenessProbe:
-          httpGet:
-            path: /livez
-            port: 3000
-          initialDelaySeconds: 5
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /readyz
-            port: 3000
-          initialDelaySeconds: 5
-          periodSeconds: 5
-        resources:
-          limits:
-            cpu: "1"
-            memory: "512Mi"
-          requests:
-            cpu: "100m"
-            memory: "128Mi"
+    replicas: 3
+    selector:
+        matchLabels:
+            app: api-gateway
+    template:
+        metadata:
+            labels:
+                app: api-gateway
+        spec:
+            containers:
+                - name: api-gateway
+                  image: api-gateway:1.0.0
+                  ports:
+                      - containerPort: 3000
+                  env:
+                      - name: NODE_ENV
+                        value: 'production'
+                      - name: REDIS_URL
+                        value: 'redis://redis:6379'
+                      - name: TRUST_PROXY
+                        value: 'true'
+                      - name: CORS_ORIGIN
+                        value: 'https://app.example.com'
+                  livenessProbe:
+                      httpGet:
+                          path: /livez
+                          port: 3000
+                      initialDelaySeconds: 5
+                      periodSeconds: 10
+                  readinessProbe:
+                      httpGet:
+                          path: /readyz
+                          port: 3000
+                      initialDelaySeconds: 5
+                      periodSeconds: 5
+                  resources:
+                      limits:
+                          cpu: '1'
+                          memory: '512Mi'
+                      requests:
+                          cpu: '100m'
+                          memory: '128Mi'
 ```
 
 ### Building Docker Image
@@ -630,29 +635,29 @@ This gateway integrates with the **Risk Admin Authentication Service** for token
 ```yaml
 # gateway.yaml
 routes:
-  - path: /ms-risk-admin
-    upstream: http://ms-risk-admin:8080
-    healthPath: /actuator/health
-    plugins:
-      - name: central-auth
-        enabled: true
-        authServiceUrl: http://sb-ms-auth-risk:9000
+    - path: /ms-risk-admin
+      upstream: http://ms-risk-admin:8080
+      healthPath: /actuator/health
+      plugins:
+          - name: central-auth
+            enabled: true
+            authServiceUrl: http://sb-ms-auth-risk:9000
 
-  - path: /ms-limit
-    upstream: http://ms-limit:8080
-    healthPath: /actuator/health
-    plugins:
-      - name: central-auth
-        enabled: true
-        authServiceUrl: http://sb-ms-auth-risk:9000
+    - path: /ms-limit
+      upstream: http://ms-limit:8080
+      healthPath: /actuator/health
+      plugins:
+          - name: central-auth
+            enabled: true
+            authServiceUrl: http://sb-ms-auth-risk:9000
 
-  - path: /ms-blacklist
-    upstream: http://ms-blacklist:8080
-    healthPath: /actuator/health
-    plugins:
-      - name: central-auth
-        enabled: true
-        authServiceUrl: http://sb-ms-auth-risk:9000
+    - path: /ms-blacklist
+      upstream: http://ms-blacklist:8080
+      healthPath: /actuator/health
+      plugins:
+          - name: central-auth
+            enabled: true
+            authServiceUrl: http://sb-ms-auth-risk:9000
 ```
 
 ### Authentication Flow
@@ -690,24 +695,24 @@ POST /v1/auth/login
 
 **Headers:**
 
-| Header | Required | Description |
-|--------|----------|-------------|
-| `Content-Type` | Yes | `application/json` |
-| `Accept` | Yes | `*/*` |
-| `Accept-Language` | No | `az`, `en`, `ru` (Default: `az`) |
-| `Device-Type` | Yes | `WEB`, `ANDROID`, `IOS`, `EXTERNAL` |
-| `App-Version` | No | Client application version |
-| `Device-Id` | No | Unique device identifier |
-| `X-Device-OS` | No | Operating system version |
-| `GPS-Coordinates` | No | User location |
-| `X-Forwarded-For` | No | Origin IP |
+| Header            | Required | Description                         |
+| ----------------- | -------- | ----------------------------------- |
+| `Content-Type`    | Yes      | `application/json`                  |
+| `Accept`          | Yes      | `*/*`                               |
+| `Accept-Language` | No       | `az`, `en`, `ru` (Default: `az`)    |
+| `Device-Type`     | Yes      | `WEB`, `ANDROID`, `IOS`, `EXTERNAL` |
+| `App-Version`     | No       | Client application version          |
+| `Device-Id`       | No       | Unique device identifier            |
+| `X-Device-OS`     | No       | Operating system version            |
+| `GPS-Coordinates` | No       | User location                       |
+| `X-Forwarded-For` | No       | Origin IP                           |
 
 **Request:**
 
 ```json
 {
-  "username": "+99455xxxxxxx",
-  "password": "your_secure_password"
+    "username": "+99455xxxxxxx",
+    "password": "your_secure_password"
 }
 ```
 
@@ -715,14 +720,14 @@ POST /v1/auth/login
 
 ```json
 {
-  "status": "ok",
-  "data": {
-    "nextStep": "COMPLETED",
-    "accessToken": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "refreshToken": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "otpExpireTime": 0,
-    "otpRequired": false
-  }
+    "status": "ok",
+    "data": {
+        "nextStep": "COMPLETED",
+        "accessToken": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
+        "refreshToken": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
+        "otpExpireTime": 0,
+        "otpRequired": false
+    }
 }
 ```
 
@@ -738,7 +743,7 @@ POST /v1/auth/refresh
 
 ```json
 {
-  "refreshToken": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+    "refreshToken": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
 }
 ```
 
@@ -746,11 +751,11 @@ POST /v1/auth/refresh
 
 ```json
 {
-  "status": "ok",
-  "data": {
-    "accessToken": "new_access_token_string...",
-    "refreshToken": "new_refresh_token_string..."
-  }
+    "status": "ok",
+    "data": {
+        "accessToken": "new_access_token_string...",
+        "refreshToken": "new_refresh_token_string..."
+    }
 }
 ```
 
@@ -767,7 +772,7 @@ Authorization: Bearer <access_token>
 
 ```json
 {
-  "refreshToken": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+    "refreshToken": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
 }
 ```
 
@@ -775,8 +780,8 @@ Authorization: Bearer <access_token>
 
 ```json
 {
-  "status": "ok",
-  "data": null
+    "status": "ok",
+    "data": null
 }
 ```
 
@@ -793,7 +798,7 @@ Authorization: Bearer <access_token>
 
 ```json
 {
-  "refreshToken": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+    "refreshToken": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
 }
 ```
 
@@ -801,8 +806,8 @@ Authorization: Bearer <access_token>
 
 ```json
 {
-  "status": "ok",
-  "data": null
+    "status": "ok",
+    "data": null
 }
 ```
 
@@ -818,8 +823,8 @@ POST /v1/auth/change-password
 
 ```json
 {
-  "username": "+99455xxxxxxx",
-  "type": "RESET"
+    "username": "+99455xxxxxxx",
+    "type": "RESET"
 }
 ```
 
@@ -829,12 +834,12 @@ POST /v1/auth/change-password
 
 ```json
 {
-  "status": "ok",
-  "data": {
-    "nextStep": "CHANGE-PASSWORD-CONFIRM",
-    "accessToken": "temp_access_token...",
-    "refreshToken": "temp_refresh_token..."
-  }
+    "status": "ok",
+    "data": {
+        "nextStep": "CHANGE-PASSWORD-CONFIRM",
+        "accessToken": "temp_access_token...",
+        "refreshToken": "temp_refresh_token..."
+    }
 }
 ```
 
@@ -849,7 +854,7 @@ Authorization: Bearer <access_token>
 
 ```json
 {
-  "otp": "614564"
+    "otp": "614564"
 }
 ```
 
@@ -857,12 +862,12 @@ Authorization: Bearer <access_token>
 
 ```json
 {
-  "status": "ok",
-  "data": {
-    "nextStep": "RESET-PASSWORD",
-    "accessToken": "temp_access_token...",
-    "refreshToken": "temp_refresh_token..."
-  }
+    "status": "ok",
+    "data": {
+        "nextStep": "RESET-PASSWORD",
+        "accessToken": "temp_access_token...",
+        "refreshToken": "temp_refresh_token..."
+    }
 }
 ```
 
@@ -877,7 +882,7 @@ Authorization: Bearer <access_token>
 
 ```json
 {
-  "password": "new_secure_password"
+    "password": "new_secure_password"
 }
 ```
 
@@ -885,12 +890,12 @@ Authorization: Bearer <access_token>
 
 ```json
 {
-  "status": "ok",
-  "data": {
-    "nextStep": "COMPLETED",
-    "accessToken": "new_access_token...",
-    "refreshToken": "new_refresh_token..."
-  }
+    "status": "ok",
+    "data": {
+        "nextStep": "COMPLETED",
+        "accessToken": "new_access_token...",
+        "refreshToken": "new_refresh_token..."
+    }
 }
 ```
 
@@ -905,7 +910,7 @@ Authorization: Bearer <access_token>
 
 ```json
 {
-  "password": "password_to_check"
+    "password": "password_to_check"
 }
 ```
 
@@ -913,10 +918,10 @@ Authorization: Bearer <access_token>
 
 ```json
 {
-  "status": "ok",
-  "data": {
-    "passwordIsMatch": true
-  }
+    "status": "ok",
+    "data": {
+        "passwordIsMatch": true
+    }
 }
 ```
 
@@ -930,21 +935,23 @@ POST /api/v1/authz/verify
 
 **Headers:**
 
-| Header | Description |
-|--------|-------------|
-| `Authorization` | `Bearer <access_token>` |
-| `X-Original-URI` | Target URI (e.g., `/api/actuator`) |
-| `X-Original-Method` | Target Method (e.g., `GET`) |
+| Header              | Description                        |
+| ------------------- | ---------------------------------- |
+| `Authorization`     | `Bearer <access_token>`            |
+| `X-Original-URI`    | Target URI (e.g., `/api/actuator`) |
+| `X-Original-Method` | Target Method (e.g., `GET`)        |
 
 **Success Response (HTTP 200-299):**
 
 When `verifyStatus` is `true`, the gateway:
+
 1. Extracts `userId` from response
 2. Injects `X-User-Id` header (e.g., `X-User-Id: 4408505240`)
 3. Forwards request to downstream microservice
 4. Strips the `Authorization` header
 
 **Routing Logic:**
+
 - `.../ms-limit/api` → routed to `ms-limit`
 - `.../ms-blacklist/api` → routed to `ms-blacklist`
 - `.../api` (default) → routed to `ms-risk-admin`
@@ -953,14 +960,14 @@ When `verifyStatus` is `true`, the gateway:
 
 ```json
 {
-  "status": "fail",
-  "responseCode": 1602,
-  "error": "UNAUTHORIZED",
-  "errorDetails": [
-    {
-      "message": "Unauthorized: invalid: token validation failed..."
-    }
-  ]
+    "status": "fail",
+    "responseCode": 1602,
+    "error": "UNAUTHORIZED",
+    "errorDetails": [
+        {
+            "message": "Unauthorized: invalid: token validation failed..."
+        }
+    ]
 }
 ```
 
@@ -1038,11 +1045,11 @@ All configuration is managed through `lib/config/`:
 const { config } = require('./lib');
 
 // Access configuration
-console.log(config.server.port);           // 3000
-console.log(config.timeouts.request);      // 15000
-console.log(config.retry.maxRetries);      // 3
-console.log(config.isDevelopment);         // true/false
-console.log(config.isProduction);          // true/false
+console.log(config.server.port); // 3000
+console.log(config.timeouts.request); // 15000
+console.log(config.retry.maxRetries); // 3
+console.log(config.isDevelopment); // true/false
+console.log(config.isProduction); // true/false
 ```
 
 ### Custom Error Classes
@@ -1060,6 +1067,7 @@ throw new RateLimitError('Too many requests', 60);
 ```
 
 Available error classes:
+
 - `GatewayError` - Base class
 - `BadRequestError` (400)
 - `UnauthorizedError` (401)
@@ -1135,6 +1143,7 @@ REDIS_URL=redis://localhost:6379
 ```
 
 The gateway will:
+
 1. Attempt to connect to Redis on startup
 2. Log success/failure of connection
 3. Fall back to in-memory if Redis is unavailable
@@ -1158,11 +1167,11 @@ logs/
 
 ### Log Levels
 
-| Level | Description |
-|-------|-------------|
-| `error` | Errors and 5xx responses |
-| `warn` | Warnings and 4xx responses |
-| `info` | Normal operations |
+| Level   | Description                   |
+| ------- | ----------------------------- |
+| `error` | Errors and 5xx responses      |
+| `warn`  | Warnings and 4xx responses    |
+| `info`  | Normal operations             |
 | `debug` | Detailed debugging (dev only) |
 
 ### Log Format
@@ -1171,14 +1180,14 @@ All logs include request correlation IDs:
 
 ```json
 {
-  "level": "info",
-  "message": "Request completed",
-  "requestId": "abc-123-def",
-  "method": "GET",
-  "url": "/api/users",
-  "statusCode": 200,
-  "duration": "45ms",
-  "timestamp": "2026-01-22T15:30:00.000Z"
+    "level": "info",
+    "message": "Request completed",
+    "requestId": "abc-123-def",
+    "method": "GET",
+    "url": "/api/users",
+    "statusCode": 200,
+    "duration": "45ms",
+    "timestamp": "2026-01-22T15:30:00.000Z"
 }
 ```
 
@@ -1194,24 +1203,25 @@ Validates JWT tokens via external auth service (`/api/v1/authz/verify`).
 
 ```yaml
 plugins:
-  - name: central-auth
-    enabled: true
-    authServiceUrl: http://sb-ms-auth-risk:9000
+    - name: central-auth
+      enabled: true
+      authServiceUrl: http://sb-ms-auth-risk:9000
 ```
 
 **Behavior:**
+
 1. Extracts `Authorization: Bearer <token>` header
 2. Calls auth service `POST /api/v1/authz/verify` with:
-   - `Authorization` header (forwarded)
-   - `X-Original-URI` header (target path)
-   - `X-Original-Method` header (HTTP method)
+    - `Authorization` header (forwarded)
+    - `X-Original-URI` header (target path)
+    - `X-Original-Method` header (HTTP method)
 3. On success (`verifyStatus: true`):
-   - Injects `X-User-Id` header with user ID
-   - Strips `Authorization` header
-   - Forwards request to upstream
+    - Injects `X-User-Id` header with user ID
+    - Strips `Authorization` header
+    - Forwards request to upstream
 4. On failure:
-   - Returns `401 Unauthorized` for invalid tokens
-   - Returns `502 Bad Gateway` if auth service unavailable
+    - Returns `401 Unauthorized` for invalid tokens
+    - Returns `502 Bad Gateway` if auth service unavailable
 
 ### Creating Custom Plugins
 
@@ -1221,7 +1231,7 @@ Create a new file in `plugins/` directory:
 // plugins/custom-header.js
 module.exports = (params) => {
     const { headerName = 'X-Custom', headerValue = 'default' } = params;
-    
+
     return (req, res, next) => {
         req.headers[headerName] = headerValue;
         next();
@@ -1233,13 +1243,13 @@ Use in `gateway.yaml`:
 
 ```yaml
 routes:
-  - path: /api/custom
-    upstream: http://backend:8080
-    plugins:
-      - name: custom-header
-        enabled: true
-        headerName: X-Request-Source
-        headerValue: api-gateway
+    - path: /api/custom
+      upstream: http://backend:8080
+      plugins:
+          - name: custom-header
+            enabled: true
+            headerName: X-Request-Source
+            headerValue: api-gateway
 ```
 
 ## Testing
@@ -1256,6 +1266,7 @@ npm run test:watch
 ```
 
 **Test Coverage:** 275 tests across 26 test suites covering:
+
 - Unit tests for all core modules
 - Integration tests for middleware combinations
 - Functional tests for end-to-end flows
@@ -1272,25 +1283,26 @@ Scrape configuration:
 
 ```yaml
 scrape_configs:
-  - job_name: 'api-gateway'
-    static_configs:
-      - targets: ['api-gateway:3000']
-    metrics_path: /metrics
-    scrape_interval: 15s
+    - job_name: 'api-gateway'
+      static_configs:
+          - targets: ['api-gateway:3000']
+      metrics_path: /metrics
+      scrape_interval: 15s
 ```
 
 ### Key Metrics to Monitor
 
-| Metric | Alert Threshold |
-|--------|----------------|
-| `http_request_duration_seconds` p99 | > 5s |
-| `http_request_errors_total` rate | > 10/min |
-| `circuit_breaker_state` | = 1 (open) |
-| `upstream_request_duration_seconds` p99 | > 10s |
+| Metric                                  | Alert Threshold |
+| --------------------------------------- | --------------- |
+| `http_request_duration_seconds` p99     | > 5s            |
+| `http_request_errors_total` rate        | > 10/min        |
+| `circuit_breaker_state`                 | = 1 (open)      |
+| `upstream_request_duration_seconds` p99 | > 10s           |
 
 ### Alerting
 
 Set up alerts for:
+
 - Circuit breaker opens (upstream failures)
 - High error rates
 - High latency

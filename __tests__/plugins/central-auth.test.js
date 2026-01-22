@@ -18,32 +18,35 @@ describe('Central Auth Plugin', () => {
     beforeEach(() => {
         // Reset modules to get fresh axios mock
         jest.resetModules();
-        
+
         // Create a mock axios instance
         mockAxiosInstance = {
             post: jest.fn()
         };
-        
+
         // Mock axios.create to return our mock instance
         jest.doMock('axios', () => ({
             create: jest.fn(() => mockAxiosInstance)
         }));
-        
+
         // Now require centralAuth (it will use our mocked axios)
         centralAuth = require('../../plugins/central-auth');
-        
+
         app = express();
         app.use(express.json());
-        
+
         authMiddleware = centralAuth({
             enabled: true,
             authServiceUrl: 'http://auth-service:9000'
         });
-        
+
         app.use(authMiddleware);
         app.get('/protected', (req, res) => {
             // Express normalizes headers, so X-User-Id becomes x-user-id
-            res.json({ message: 'protected', userId: req.headers['x-user-id'] || req.headers['X-User-Id'] });
+            res.json({
+                message: 'protected',
+                userId: req.headers['x-user-id'] || req.headers['X-User-Id']
+            });
         });
     });
 
@@ -78,7 +81,7 @@ describe('Central Auth Plugin', () => {
                 data: {
                     data: {
                         verifyStatus: true,
-                        userId: 4408505240  // Number as per spec
+                        userId: 4408505240 // Number as per spec
                     }
                 }
             });
@@ -121,9 +124,7 @@ describe('Central Auth Plugin', () => {
                 }
             });
 
-            await request(app)
-                .get('/protected')
-                .set('Authorization', 'Bearer token');
+            await request(app).get('/protected').set('Authorization', 'Bearer token');
 
             // Verify the auth service was called correctly
             expect(mockAxiosInstance.post).toHaveBeenCalled();
@@ -188,9 +189,11 @@ describe('Central Auth Plugin', () => {
                     status: 'fail',
                     responseCode: 1602,
                     error: 'UNAUTHORIZED',
-                    errorDetails: [{
-                        message: 'Invalid token'
-                    }]
+                    errorDetails: [
+                        {
+                            message: 'Invalid token'
+                        }
+                    ]
                 }
             });
 
@@ -227,9 +230,12 @@ describe('Central Auth Plugin', () => {
                     status: 'fail',
                     responseCode: 1602,
                     error: 'UNAUTHORIZED',
-                    errorDetails: [{
-                        message: 'Eyniləşdirildikdən sonra şəxsi məlumatların redaktəsi mümkün deyil'
-                    }]
+                    errorDetails: [
+                        {
+                            message:
+                                'Eyniləşdirildikdən sonra şəxsi məlumatların redaktəsi mümkün deyil'
+                        }
+                    ]
                 }
             });
 
@@ -314,7 +320,7 @@ describe('Central Auth Plugin', () => {
                 create: jest.fn(() => mockAxiosInstance)
             }));
             const centralAuthFresh = require('../../plugins/central-auth');
-            
+
             const disabledAuth = centralAuthFresh({
                 enabled: false,
                 authServiceUrl: 'http://auth-service:9000'
@@ -338,7 +344,7 @@ describe('Central Auth Plugin', () => {
                 create: jest.fn(() => mockAxiosInstance)
             }));
             const centralAuthFresh = require('../../plugins/central-auth');
-            
+
             expect(() => {
                 centralAuthFresh({
                     enabled: true,
@@ -360,7 +366,7 @@ describe('Central Auth Plugin', () => {
                 create: jest.fn(() => mockAxiosInstance)
             }));
             const centralAuthFresh = require('../../plugins/central-auth');
-            
+
             // Should not throw with trailing slash
             expect(() => {
                 centralAuthFresh({
@@ -378,9 +384,7 @@ describe('Central Auth Plugin', () => {
                 data: { data: { verifyStatus: true, userId: 'user123' } }
             });
 
-            await request(app)
-                .get('/protected?query=param')
-                .set('Authorization', 'Bearer token');
+            await request(app).get('/protected?query=param').set('Authorization', 'Bearer token');
 
             const callArgs = mockAxiosInstance.post.mock.calls[0];
             expect(callArgs[2].headers['X-Original-URI']).toContain('/protected');
@@ -392,9 +396,7 @@ describe('Central Auth Plugin', () => {
                 data: { data: { verifyStatus: true, userId: 'user123' } }
             });
 
-            await request(app)
-                .get('/protected')
-                .set('Authorization', 'Bearer token');
+            await request(app).get('/protected').set('Authorization', 'Bearer token');
 
             const callArgs = mockAxiosInstance.post.mock.calls[0];
             expect(callArgs[2].headers['X-Original-Method']).toBe('GET');

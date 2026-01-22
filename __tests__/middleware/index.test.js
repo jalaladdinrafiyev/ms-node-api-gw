@@ -1,23 +1,23 @@
 describe('Middleware Barrel Exports', () => {
     test('should export all middleware modules', () => {
         const middleware = require('../../middleware');
-        
+
         // Security
         expect(middleware.security).toBeDefined();
         expect(middleware.applySecurityMiddleware).toBeDefined();
         expect(typeof middleware.security).toBe('function');
-        
+
         // Rate limiting
         expect(middleware.rateLimiter).toBeDefined();
         expect(middleware.createRateLimiter).toBeDefined();
         expect(middleware.globalRateLimiter).toBeDefined();
         expect(middleware.strictRateLimiter).toBeDefined();
-        
+
         // Request handling
         expect(middleware.requestId).toBeDefined();
         expect(middleware.requestLogger).toBeDefined();
         expect(middleware.requestTimeout).toBeDefined();
-        
+
         // Error handling
         expect(middleware.errorHandler).toBeDefined();
         expect(middleware.notFoundHandler).toBeDefined();
@@ -42,7 +42,11 @@ describe('Middleware Barrel Exports', () => {
     });
 
     test('error handlers should be functions', () => {
-        const { notFoundHandler, globalErrorHandler, gatewayNotConfiguredHandler } = require('../../middleware');
+        const {
+            notFoundHandler,
+            globalErrorHandler,
+            gatewayNotConfiguredHandler
+        } = require('../../middleware');
         expect(typeof notFoundHandler).toBe('function');
         expect(typeof globalErrorHandler).toBe('function');
         expect(typeof gatewayNotConfiguredHandler).toBe('function');

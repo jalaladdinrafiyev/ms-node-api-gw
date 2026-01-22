@@ -1,9 +1,9 @@
 /**
  * Request Timeout Middleware
- * 
+ *
  * Enforces request timeouts to prevent slow clients
  * from holding connections indefinitely.
- * 
+ *
  * @module middleware/requestTimeout
  */
 
@@ -24,18 +24,18 @@ const requestTimeout = (timeoutMs = config.timeouts.request) => {
                     url: req.originalUrl || req.url,
                     timeout: timeoutMs
                 });
-                
+
                 res.status(504).json({
                     error: 'Gateway Timeout',
                     message: 'Request timed out',
                     timestamp: new Date().toISOString()
                 });
             }
-            
+
             // Terminate the underlying socket
             req.destroy();
         });
-        
+
         next();
     };
 };

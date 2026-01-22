@@ -33,10 +33,10 @@ describe('Enterprise Features Integration', () => {
 
             // Security headers
             expect(response.headers['x-content-type-options']).toBe('nosniff');
-            
+
             // Should not be rate limited
             expect(response.status).toBe(200);
-            
+
             // Metrics should be recorded
             const metricsResponse = await request(app).get('/metrics');
             expect(metricsResponse.status).toBe(200);
@@ -67,7 +67,10 @@ describe('Enterprise Features Integration', () => {
     describe('Circuit Breaker + Health Check Integration', () => {
         test('should track circuit breaker state in health endpoint', async () => {
             const healthCheck = require('../../routes/health');
-            app.get('/health', healthCheck(() => ({ some: 'router' })));
+            app.get(
+                '/health',
+                healthCheck(() => ({ some: 'router' }))
+            );
 
             // Create a circuit breaker
             circuitBreakerManager.getBreaker('http://test.com');
@@ -82,10 +85,10 @@ describe('Enterprise Features Integration', () => {
         test('should show degraded status when circuit breakers are open', async () => {
             const healthCheck = require('../../routes/health');
             const upstreamHealthChecker = require('../../lib/upstreamHealth');
-            
+
             // Mock upstream health to return empty
             jest.spyOn(upstreamHealthChecker, 'getAllHealthStatus').mockReturnValue({});
-            
+
             // Mock circuit breaker stats to return open state
             jest.spyOn(circuitBreakerManager, 'getStats').mockReturnValue({
                 'http://test.com': {
@@ -94,14 +97,17 @@ describe('Enterprise Features Integration', () => {
                     fires: 10
                 }
             });
-            
-            app.get('/health', healthCheck(() => ({ some: 'router' })));
+
+            app.get(
+                '/health',
+                healthCheck(() => ({ some: 'router' }))
+            );
 
             const response = await request(app).get('/health');
 
             expect(response.status).toBe(503);
             expect(response.body.status).toBe('degraded');
-            
+
             // Restore mocks
             circuitBreakerManager.getStats.mockRestore();
             upstreamHealthChecker.getAllHealthStatus.mockRestore();
@@ -137,14 +143,14 @@ describe('Enterprise Features Integration', () => {
             app.get('/error', (req, res, next) => {
                 next(new Error('Test error'));
             });
-            app.use((err, req, res, next) => {
+            app.use((err, req, res, _next) => {
                 res.status(500).json({ error: err.message });
             });
 
             const response = await request(app).get('/error');
 
             expect(response.status).toBe(500);
-            
+
             // Metrics should still be recorded
             const metricsResponse = await request(app).get('/metrics');
             expect(metricsResponse.text).toContain('http_request_errors_total');
