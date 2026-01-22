@@ -123,4 +123,110 @@ describe('Circuit Breaker Manager', () => {
             expect(stats['http://test1.com']).toBeDefined();
         });
     });
+
+    describe('isOpen', () => {
+        test('should return false for closed circuit', () => {
+            circuitBreakerManager.getBreaker('http://healthy.com');
+            expect(circuitBreakerManager.isOpen('http://healthy.com')).toBe(false);
+        });
+
+        test('should return false for non-existent breaker', () => {
+            expect(circuitBreakerManager.isOpen('http://unknown.com')).toBe(false);
+        });
+    });
+
+    describe('recordSuccess', () => {
+        test('should emit success event on breaker', () => {
+            const breaker = circuitBreakerManager.getBreaker('http://success.com');
+            const emitSpy = jest.spyOn(breaker, 'emit');
+            
+            circuitBreakerManager.recordSuccess('http://success.com');
+            
+            expect(emitSpy).toHaveBeenCalledWith('success');
+            emitSpy.mockRestore();
+        });
+
+        test('should handle non-existent breaker gracefully', () => {
+            // Should not throw
+            expect(() => {
+                circuitBreakerManager.recordSuccess('http://nonexistent.com');
+            }).not.toThrow();
+        });
+    });
+
+    describe('recordFailure', () => {
+        test('should emit failure for network errors', () => {
+            const breaker = circuitBreakerManager.getBreaker('http://failure.com');
+            const emitSpy = jest.spyOn(breaker, 'emit');
+            
+            circuitBreakerManager.recordFailure('http://failure.com', { code: 'ECONNRESET' });
+            
+            expect(emitSpy).toHaveBeenCalledWith('failure');
+            emitSpy.mockRestore();
+        });
+
+        test('should emit failure for ETIMEDOUT', () => {
+            const breaker = circuitBreakerManager.getBreaker('http://timeout.com');
+            const emitSpy = jest.spyOn(breaker, 'emit');
+            
+            circuitBreakerManager.recordFailure('http://timeout.com', { code: 'ETIMEDOUT' });
+            
+            expect(emitSpy).toHaveBeenCalledWith('failure');
+            emitSpy.mockRestore();
+        });
+
+        test('should emit failure for ECONNREFUSED', () => {
+            const breaker = circuitBreakerManager.getBreaker('http://refused.com');
+            const emitSpy = jest.spyOn(breaker, 'emit');
+            
+            circuitBreakerManager.recordFailure('http://refused.com', { code: 'ECONNREFUSED' });
+            
+            expect(emitSpy).toHaveBeenCalledWith('failure');
+            emitSpy.mockRestore();
+        });
+
+        test('should emit failure for 5xx server errors', () => {
+            const breaker = circuitBreakerManager.getBreaker('http://server-error.com');
+            const emitSpy = jest.spyOn(breaker, 'emit');
+            
+            circuitBreakerManager.recordFailure('http://server-error.com', { status: 500 });
+            
+            expect(emitSpy).toHaveBeenCalledWith('failure');
+            emitSpy.mockRestore();
+        });
+
+        test('should emit failure for statusCode 5xx', () => {
+            const breaker = circuitBreakerManager.getBreaker('http://server-error2.com');
+            const emitSpy = jest.spyOn(breaker, 'emit');
+            
+            circuitBreakerManager.recordFailure('http://server-error2.com', { statusCode: 502 });
+            
+            expect(emitSpy).toHaveBeenCalledWith('failure');
+            emitSpy.mockRestore();
+        });
+
+        test('should NOT emit failure for 4xx client errors', () => {
+            const breaker = circuitBreakerManager.getBreaker('http://client-error.com');
+            const emitSpy = jest.spyOn(breaker, 'emit');
+            
+            circuitBreakerManager.recordFailure('http://client-error.com', { status: 404 });
+            
+            expect(emitSpy).not.toHaveBeenCalledWith('failure');
+            emitSpy.mockRestore();
+        });
+
+        test('should handle non-existent breaker gracefully', () => {
+            expect(() => {
+                circuitBreakerManager.recordFailure('http://nonexistent.com', { code: 'ECONNRESET' });
+            }).not.toThrow();
+        });
+
+        test('should handle empty error object', () => {
+            const breaker = circuitBreakerManager.getBreaker('http://empty-error.com');
+            
+            expect(() => {
+                circuitBreakerManager.recordFailure('http://empty-error.com', {});
+            }).not.toThrow();
+        });
+    });
 });
