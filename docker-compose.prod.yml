@@ -1,0 +1,81 @@
+# ============================================
+# Production Docker Compose
+# ============================================
+# Usage:
+#   docker compose -f docker-compose.prod.yml up -d
+#
+# Or with image from file:
+#   gunzip -c api-gateway-1.0.0.tar.gz | docker load
+#   docker compose -f docker-compose.prod.yml up -d
+# ============================================
+
+version: '3.8'
+
+services:
+  api-gateway:
+    image: api-gateway:1.0.0
+    container_name: api-gateway
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    
+    environment:
+      # Required
+      - NODE_ENV=production
+      - PORT=3000
+      
+      # Security
+      - TRUST_PROXY=true
+      - CORS_ORIGIN=*
+      
+      # Logging
+      - LOG_LEVEL=info
+      
+      # Rate Limiting
+      - RATE_LIMIT_MAX=1000
+      - RATE_LIMIT_WINDOW_MS=60000
+      
+      # Timeouts (milliseconds)
+      - REQUEST_TIMEOUT_MS=30000
+      - UPSTREAM_TIMEOUT_MS=60000
+      
+      # Retry
+      - MAX_RETRIES=3
+    
+    volumes:
+      # Mount your gateway configuration
+      - ./gateway.yaml:/app/gateway.yaml:ro
+      
+      # Optional: Persist logs
+      - ./logs:/app/logs
+    
+    # Docker-native health check
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/livez', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    
+    # Resource limits (adjust based on your server)
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# Optional: Add networks if needed
+# networks:
+#   default:
+#     external:
+#       name: your-network

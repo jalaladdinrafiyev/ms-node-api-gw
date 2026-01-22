@@ -1,0 +1,11 @@
+version: 2.2.0
+
+routes:
+  # Example 1: Route to a service running on YOUR computer (Port 8080)
+  - path: /risk-admin
+    upstream: http://host.docker.internal:8080
+    plugins:
+      - name: central-auth
+        enabled: true
+        # Pointing to your real Auth Service
+        authServiceUrl: http://host.docker.internal:9000 
