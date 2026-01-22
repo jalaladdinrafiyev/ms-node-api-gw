@@ -55,6 +55,209 @@ docker compose -f docker-compose.prod.yml up -d
 curl http://localhost:3000/readyz
 ```
 
+## Usage Guide
+
+### How Request Routing Works
+
+```
+Client Request → API Gateway → Backend Service
+     ↓
+http://gateway:3000/api/users/123
+     ↓
+Gateway strips "/api/users" prefix
+     ↓
+http://user-service:8080/123
+```
+
+### Common Use Cases
+
+#### 1. Simple Proxy (No Authentication)
+
+```yaml
+# gateway.yaml
+routes:
+  - path: /api/products
+    upstream: http://product-service:8080
+```
+
+```bash
+# Client request
+curl http://localhost:3000/api/products
+
+# Gateway forwards to: http://product-service:8080/products
+```
+
+#### 2. Protected Route (With Authentication)
+
+```yaml
+# gateway.yaml
+routes:
+  - path: /api/orders
+    upstream: http://order-service:8080
+    plugins:
+      - name: central-auth
+        enabled: true
+        authServiceUrl: http://auth-service:9000
+```
+
+```bash
+# Client request with JWT token
+curl -H "Authorization: Bearer eyJhbGc..." \
+     http://localhost:3000/api/orders
+
+# Gateway:
+# 1. Validates token with auth service
+# 2. Adds X-User-Id header to request
+# 3. Strips Authorization header
+# 4. Forwards to order-service
+```
+
+#### 3. Load Balanced Route (Multiple Backends)
+
+```yaml
+# gateway.yaml
+routes:
+  - path: /api/search
+    upstream: http://search-1:8080,http://search-2:8080,http://search-3:8080
+    loadBalanceStrategy: health_aware
+    healthPath: /health
+```
+
+Gateway automatically:
+- Monitors health of all backends
+- Routes traffic to healthy instances
+- Opens circuit breaker if a backend fails repeatedly
+
+#### 4. Route with Timeout and Retry
+
+```yaml
+# gateway.yaml
+routes:
+  - path: /api/payments
+    upstream: http://payment-service:8080
+    timeout: 30000        # 30 second timeout
+    maxRetries: 3         # Retry up to 3 times on failure
+    retry: true
+```
+
+### Complete Example: E-commerce Setup
+
+**Scenario:** Gateway for an e-commerce platform with multiple microservices.
+
+```yaml
+# gateway.yaml
+version: 2.2.0
+
+routes:
+  # Public auth endpoints - no authentication needed
+  - path: /auth
+    upstream: http://auth-service:9000
+    timeout: 5000
+    
+  # Products API - public read access
+  - path: /api/products
+    upstream: http://product-service:8080
+    healthPath: /actuator/health
+    loadBalanceStrategy: round_robin
+    
+  # Orders API - requires authentication
+  - path: /api/orders
+    upstream: http://order-service-1:8080,http://order-service-2:8080
+    loadBalanceStrategy: health_aware
+    healthPath: /health
+    timeout: 15000
+    maxRetries: 2
+    plugins:
+      - name: central-auth
+        enabled: true
+        authServiceUrl: http://auth-service:9000
+        
+  # Admin API - requires authentication, stricter settings
+  - path: /admin
+    upstream: http://admin-service:8080
+    timeout: 30000
+    maxRetries: 1
+    plugins:
+      - name: central-auth
+        enabled: true
+        authServiceUrl: http://auth-service:9000
+```
+
+**Client Usage:**
+
+```bash
+# 1. Login (public endpoint)
+curl -X POST http://localhost:3000/auth/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "+99455xxxxxxx", "password": "secret"}'
+
+# Response: { "data": { "accessToken": "eyJhbGc...", ... } }
+
+# 2. Browse products (public)
+curl http://localhost:3000/api/products
+
+# 3. Create order (requires token)
+curl -X POST http://localhost:3000/api/orders \
+  -H "Authorization: Bearer eyJhbGc..." \
+  -H "Content-Type: application/json" \
+  -d '{"productId": 123, "quantity": 2}'
+
+# 4. Admin operations (requires token)
+curl http://localhost:3000/admin/dashboard \
+  -H "Authorization: Bearer eyJhbGc..."
+```
+
+### Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        CLIENTS                               │
+│              (Web, Mobile, External APIs)                    │
+└─────────────────────────┬───────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────────┐
+│                     API GATEWAY (:3000)                      │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │ Security → Rate Limit → Auth → Load Balance → Proxy  │    │
+│  └─────────────────────────────────────────────────────┘    │
+│                                                              │
+│  Endpoints:                                                  │
+│  • /health  - Health check                                   │
+│  • /metrics - Prometheus metrics                             │
+│  • /livez   - Kubernetes liveness                            │
+│  • /readyz  - Kubernetes readiness                           │
+└─────────────────────────┬───────────────────────────────────┘
+                          │
+          ┌───────────────┼───────────────┐
+          ▼               ▼               ▼
+    ┌──────────┐    ┌──────────┐    ┌──────────┐
+    │ Service A│    │ Service B│    │ Service C│
+    │  :8080   │    │  :8081   │    │  :8082   │
+    └──────────┘    └──────────┘    └──────────┘
+```
+
+### Monitoring Your Gateway
+
+```bash
+# Check gateway health
+curl http://localhost:3000/health | jq
+
+# Check if ready (for load balancers)
+curl http://localhost:3000/readyz
+
+# Get Prometheus metrics
+curl http://localhost:3000/metrics
+
+# Key metrics to monitor:
+# - http_requests_total
+# - http_request_duration_seconds
+# - circuit_breaker_state
+# - upstream_requests_total
+```
+
+---
+
 ## Configuration
 
 Routes are configured in `gateway.yaml`:
