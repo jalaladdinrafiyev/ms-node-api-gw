@@ -1,6 +1,6 @@
 # Microservices API Gateway
 
-A production-ready, enterprise-level API Gateway built with Node.js and Express. Features dynamic route configuration, plugin-based middleware, circuit breakers, load balancing, and zero-downtime configuration updates.
+A production-ready, enterprise-level API Gateway built with Node.js and Express. Features dynamic route configuration, plugin-based middleware, circuit breakers, load balancing, distributed rate limiting, and zero-downtime configuration updates.
 
 ## Features
 
@@ -12,10 +12,13 @@ A production-ready, enterprise-level API Gateway built with Node.js and Express.
 - 🔄 **Retry Logic**: Exponential backoff with jitter for transient failures
 - 📊 **Prometheus Metrics**: Full observability with `/metrics` endpoint
 - ❤️ **Health Checks**: Comprehensive `/health` endpoint with upstream status
+- 🎯 **Kubernetes Ready**: Liveness (`/livez`) and readiness (`/readyz`) probes
 - 📁 **Structured Logging**: Winston with daily/hourly rotation
-- 🐳 **Docker Ready**: Full Docker and Docker Compose support
+- 🐳 **Docker Ready**: Full Docker and Docker Compose support with Redis
 - ⚡ **Zero Downtime**: Atomic router updates prevent service interruption
 - 🛡️ **Graceful Shutdown**: Clean connection draining on SIGTERM/SIGINT
+- 🔗 **Request Tracing**: Correlation IDs for distributed tracing
+- 🚦 **Distributed Rate Limiting**: Redis-backed for multi-instance deployments
 
 ## Quick Start
 
@@ -31,15 +34,25 @@ npm start
 
 The gateway runs on `http://localhost:3000` by default.
 
-### Docker
+### Docker (Development)
 
 ```bash
 # Build and run with Docker Compose
 docker-compose up --build
+```
 
-# Or standalone Docker
-docker build -t api-gateway .
-docker run -p 3000:3000 -v $(pwd)/gateway.yaml:/app/gateway.yaml api-gateway
+### Docker (Production)
+
+```bash
+# Copy environment template
+cp env.example .env
+# Edit .env with your values
+
+# Start with Redis for distributed rate limiting
+docker compose -f docker-compose.prod.yml up -d
+
+# Check health
+curl http://localhost:3000/readyz
 ```
 
 ## Configuration
@@ -53,10 +66,12 @@ routes:
   # Simple route
   - path: /api/users
     upstream: http://user-service:8080
+    healthPath: /actuator/health
 
   # Protected route with authentication
   - path: /api/orders
     upstream: http://order-service:8080
+    healthPath: /health
     plugins:
       - name: central-auth
         enabled: true
@@ -64,10 +79,9 @@ routes:
 
   # Load-balanced route with multiple upstreams
   - path: /api/products
-    upstream:
-      - http://product-service-1:8080
-      - http://product-service-2:8080
+    upstream: http://product-service-1:8080,http://product-service-2:8080
     loadBalanceStrategy: health_aware
+    healthPath: /actuator/health
     timeout: 10000
     maxRetries: 3
 ```
@@ -78,6 +92,7 @@ routes:
 |--------|------|---------|-------------|
 | `path` | string | required | URL path prefix to match |
 | `upstream` | string/array | required | Backend service URL(s) |
+| `healthPath` | string | `/health` | Custom health check path for upstream |
 | `timeout` | number | `30000` | Request timeout in milliseconds |
 | `maxRetries` | number | `3` | Max retry attempts on failure |
 | `retry` | boolean | `true` | Enable/disable retry logic |
@@ -94,23 +109,72 @@ routes:
 
 ## Environment Variables
 
+### Core Settings
+
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `PORT` | `3000` | Gateway listen port |
 | `NODE_ENV` | `development` | Environment mode |
+| `GATEWAY_CONFIG_PATH` | `./gateway.yaml` | Path to route configuration |
+
+### Security
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `TRUST_PROXY` | `false` | Trust X-Forwarded-For header |
+| `CORS_ORIGIN` | `*` | Allowed CORS origins (comma-separated) |
+| `CORS_CREDENTIALS` | `true` | Allow credentials in CORS |
+| `REQUEST_BODY_LIMIT` | `10mb` | Max request body size |
+
+### Rate Limiting
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `REDIS_URL` | - | Redis URL for distributed rate limiting |
 | `RATE_LIMIT_MAX` | `100` | Max requests per window |
 | `RATE_LIMIT_WINDOW_MS` | `60000` | Rate limit window (ms) |
+| `RATE_LIMIT_STRICT_MAX` | `10` | Strict rate limit for sensitive endpoints |
+
+### Timeouts
+
+| Variable | Default | Description |
+|----------|---------|-------------|
 | `REQUEST_TIMEOUT_MS` | `15000` | Client request timeout |
 | `UPSTREAM_TIMEOUT_MS` | `30000` | Upstream proxy timeout |
+| `SHUTDOWN_TIMEOUT_MS` | `30000` | Graceful shutdown timeout |
+| `HEALTH_CHECK_TIMEOUT_MS` | `5000` | Health check timeout |
+
+### Retry & Circuit Breaker
+
+| Variable | Default | Description |
+|----------|---------|-------------|
 | `MAX_RETRIES` | `3` | Retry attempts for failures |
 | `RETRY_INITIAL_DELAY_MS` | `100` | Initial retry delay |
 | `RETRY_MAX_DELAY_MS` | `10000` | Maximum retry delay |
+| `CIRCUIT_BREAKER_TIMEOUT_MS` | `10000` | Circuit breaker timeout |
+| `CIRCUIT_BREAKER_ERROR_THRESHOLD` | `50` | Error % to open circuit |
+| `CIRCUIT_BREAKER_RESET_TIMEOUT_MS` | `30000` | Time before half-open |
+
+### Health Checks
+
+| Variable | Default | Description |
+|----------|---------|-------------|
 | `HEALTH_CHECK_INTERVAL_MS` | `30000` | Upstream health check interval |
-| `HEALTH_CHECK_TIMEOUT_MS` | `5000` | Health check timeout |
-| `MAX_SOCKETS` | `256` | Connection pool size |
-| `TRUST_PROXY` | `false` | Trust X-Forwarded-For header |
-| `REQUEST_BODY_LIMIT` | `10mb` | Max request body size |
-| `LOG_LEVEL` | `info` | Logging level |
+| `HEALTH_CHECK_UNHEALTHY_THRESHOLD` | `3` | Failures before unhealthy |
+| `HEALTH_CHECK_HEALTHY_THRESHOLD` | `2` | Successes before healthy |
+
+### Connection Pool
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `MAX_SOCKETS` | `256` | Max concurrent connections per upstream |
+| `MAX_FREE_SOCKETS` | `64` | Max idle connections to keep |
+
+### Logging
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `LOG_LEVEL` | `info` | Logging level (error, warn, info, debug) |
 
 ## API Endpoints
 
@@ -147,6 +211,33 @@ Returns comprehensive gateway status:
 }
 ```
 
+### Kubernetes Probes
+
+```
+GET /livez     # Liveness probe - is the process alive?
+GET /readyz    # Readiness probe - is the gateway ready to serve traffic?
+```
+
+**Liveness Response:**
+```json
+{
+  "status": "ok",
+  "timestamp": "2026-01-22T15:30:00.000Z"
+}
+```
+
+**Readiness Response:**
+```json
+{
+  "status": "ready",
+  "timestamp": "2026-01-22T15:30:00.000Z",
+  "checks": {
+    "routes": "loaded",
+    "memory": "ok"
+  }
+}
+```
+
 ### Prometheus Metrics
 
 ```
@@ -167,6 +258,10 @@ http_request_duration_seconds_bucket{method="GET",route="/api/users",le="0.1"} 1
 # HELP circuit_breaker_state Circuit breaker state (0=closed, 1=open, 2=half-open)
 # TYPE circuit_breaker_state gauge
 circuit_breaker_state{upstream="http://api-server:8080"} 0
+
+# HELP upstream_requests_total Total upstream requests
+# TYPE upstream_requests_total counter
+upstream_requests_total{upstream="http://api-server:8080",method="GET",status_code="200"} 1500
 ```
 
 ## Request Flow
@@ -178,20 +273,148 @@ Client Request
 │          API Gateway                │
 ├─────────────────────────────────────┤
 │  1. Security (Helmet, CORS)         │
-│  2. Rate Limiting                   │
-│  3. Request Timeout                 │
-│  4. Metrics Collection              │
-│  5. Request Logging                 │
-│  6. Route Matching                  │
-│  7. Plugin Middleware (Auth, etc.)  │
-│  8. Circuit Breaker Check           │
-│  9. Load Balancer Selection         │
-│ 10. Proxy to Upstream               │
-│ 11. Retry on Failure                │
+│  2. Request ID Generation           │
+│  3. Rate Limiting (Redis/Memory)    │
+│  4. Request Timeout                 │
+│  5. Metrics Collection              │
+│  6. Request Logging                 │
+│  7. Route Matching                  │
+│  8. Plugin Middleware (Auth, etc.)  │
+│  9. Circuit Breaker Check           │
+│ 10. Load Balancer Selection         │
+│ 11. Proxy to Upstream               │
+│ 12. Retry on Failure                │
+│ 13. Record Success/Failure          │
 └─────────────────────────────────────┘
      ↓
 Upstream Service
 ```
+
+## Request Tracing
+
+The gateway automatically generates and propagates request correlation IDs:
+
+| Header | Description |
+|--------|-------------|
+| `X-Request-ID` | Unique request identifier |
+| `X-Correlation-ID` | Propagated from client or generated |
+| `X-Trace-ID` | Propagated for distributed tracing |
+
+These headers are:
+- Generated if not present in the incoming request
+- Propagated to upstream services
+- Included in all log entries
+- Returned in response headers
+
+---
+
+## Production Deployment
+
+### Docker Compose (Recommended)
+
+The production Docker Compose setup includes:
+- API Gateway container
+- Redis for distributed rate limiting
+- Resource limits and health checks
+- Automatic restarts
+
+```bash
+# 1. Create environment file
+cp env.example .env
+
+# 2. Edit with your production values
+nano .env
+
+# 3. Start the stack
+docker compose -f docker-compose.prod.yml up -d
+
+# 4. View logs
+docker compose -f docker-compose.prod.yml logs -f api-gateway
+
+# 5. Stop
+docker compose -f docker-compose.prod.yml down
+```
+
+### Kubernetes Deployment
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: api-gateway
+  template:
+    metadata:
+      labels:
+        app: api-gateway
+    spec:
+      containers:
+      - name: api-gateway
+        image: api-gateway:1.0.0
+        ports:
+        - containerPort: 3000
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: REDIS_URL
+          value: "redis://redis:6379"
+        - name: TRUST_PROXY
+          value: "true"
+        - name: CORS_ORIGIN
+          value: "https://app.example.com"
+        livenessProbe:
+          httpGet:
+            path: /livez
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        resources:
+          limits:
+            cpu: "1"
+            memory: "512Mi"
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+```
+
+### Building Docker Image
+
+```bash
+# Using the build script (Windows PowerShell)
+.\build-docker.ps1
+
+# Or manually
+docker build -t api-gateway:1.0.0 .
+
+# Save for distribution
+docker save api-gateway:1.0.0 | gzip > api-gateway-1.0.0.tar.gz
+
+# Load on target server
+gunzip -c api-gateway-1.0.0.tar.gz | docker load
+```
+
+### Production Checklist
+
+- [ ] Set `NODE_ENV=production`
+- [ ] Configure `CORS_ORIGIN` (not `*`)
+- [ ] Enable `TRUST_PROXY=true` if behind load balancer
+- [ ] Connect Redis via `REDIS_URL` for distributed rate limiting
+- [ ] Set appropriate `RATE_LIMIT_MAX` for your traffic
+- [ ] Configure health check paths in `gateway.yaml`
+- [ ] Set up Prometheus scraping on `/metrics`
+- [ ] Configure log aggregation (ELK, CloudWatch, etc.)
+- [ ] Set up alerting on circuit breaker opens
+- [ ] Load test with expected traffic patterns
 
 ---
 
@@ -206,6 +429,7 @@ This gateway integrates with the **Risk Admin Authentication Service** for token
 routes:
   - path: /ms-risk-admin
     upstream: http://ms-risk-admin:8080
+    healthPath: /actuator/health
     plugins:
       - name: central-auth
         enabled: true
@@ -213,6 +437,7 @@ routes:
 
   - path: /ms-limit
     upstream: http://ms-limit:8080
+    healthPath: /actuator/health
     plugins:
       - name: central-auth
         enabled: true
@@ -220,6 +445,7 @@ routes:
 
   - path: /ms-blacklist
     upstream: http://ms-blacklist:8080
+    healthPath: /actuator/health
     plugins:
       - name: central-auth
         enabled: true
@@ -537,50 +763,6 @@ When `verifyStatus` is `true`, the gateway:
 
 > Error messages are localized via `ms-i18n` service based on `Accept-Language` header.
 
-### Example: Complete Auth-Enabled Setup
-
-```yaml
-# gateway.yaml
-version: 2.2.0
-
-routes:
-  # Public auth endpoints (no auth required)
-  - path: /auth
-    upstream: http://sb-ms-auth-risk:9000
-    timeout: 5000
-
-  # Protected Risk Admin API
-  - path: /ms-risk-admin
-    upstream:
-      - http://ms-risk-admin-1:8080
-      - http://ms-risk-admin-2:8080
-    loadBalanceStrategy: health_aware
-    timeout: 15000
-    maxRetries: 3
-    plugins:
-      - name: central-auth
-        enabled: true
-        authServiceUrl: http://sb-ms-auth-risk:9000
-
-  # Protected Limit Service
-  - path: /ms-limit
-    upstream: http://ms-limit:8080
-    timeout: 10000
-    plugins:
-      - name: central-auth
-        enabled: true
-        authServiceUrl: http://sb-ms-auth-risk:9000
-
-  # Protected Blacklist Service
-  - path: /ms-blacklist
-    upstream: http://ms-blacklist:8080
-    timeout: 10000
-    plugins:
-      - name: central-auth
-        enabled: true
-        authServiceUrl: http://sb-ms-auth-risk:9000
-```
-
 ---
 
 ## Project Structure
@@ -590,6 +772,11 @@ ms-node-api-gw/
 ├── server.js                  # Application entry point
 ├── gateway.yaml               # Route configuration
 ├── package.json               # Dependencies
+├── env.example                # Environment template
+├── Dockerfile                 # Container definition
+├── docker-compose.yml         # Dev orchestration
+├── docker-compose.prod.yml    # Production orchestration (with Redis)
+├── build-docker.ps1           # Docker build script
 │
 ├── lib/                       # Core library modules
 │   ├── index.js               # Barrel export
@@ -612,7 +799,8 @@ ms-node-api-gw/
 ├── middleware/                # Express middleware
 │   ├── index.js               # Barrel export
 │   ├── errorHandler.js        # Error handling
-│   ├── rateLimiter.js         # Rate limiting
+│   ├── rateLimiter.js         # Rate limiting (Redis/Memory)
+│   ├── requestId.js           # Request correlation IDs
 │   ├── requestLogger.js       # Request logging
 │   ├── requestTimeout.js      # Timeout handling
 │   └── security.js            # Helmet, CORS, compression
@@ -623,9 +811,10 @@ ms-node-api-gw/
 ├── routes/                    # Route handlers
 │   ├── index.js               # Barrel export
 │   ├── health.js              # Health check endpoint
-│   └── metrics.js             # Prometheus metrics
+│   ├── metrics.js             # Prometheus metrics
+│   └── probes.js              # Kubernetes probes
 │
-├── __tests__/                 # Test suite (165 tests)
+├── __tests__/                 # Test suite (275 tests)
 │   ├── lib/                   # Library tests
 │   ├── middleware/            # Middleware tests
 │   ├── plugins/               # Plugin tests
@@ -633,9 +822,7 @@ ms-node-api-gw/
 │   ├── integration/           # Integration tests
 │   └── functional/            # Functional tests
 │
-├── logs/                      # Log files (auto-created)
-├── Dockerfile                 # Container definition
-└── docker-compose.yml         # Docker orchestration
+└── logs/                      # Log files (auto-created)
 ```
 
 ## Architecture
@@ -652,6 +839,7 @@ console.log(config.server.port);           // 3000
 console.log(config.timeouts.request);      // 15000
 console.log(config.retry.maxRetries);      // 3
 console.log(config.isDevelopment);         // true/false
+console.log(config.isProduction);          // true/false
 ```
 
 ### Custom Error Classes
@@ -694,6 +882,101 @@ const { security, globalRateLimiter, requestTimeout } = require('./middleware');
 
 // Import from routes
 const { healthCheck, metricsMiddleware, metricsHandler } = require('./routes');
+```
+
+## Enterprise Features
+
+### Circuit Breakers
+
+Prevents cascading failures when upstream services are down:
+
+- Opens after 50% error rate in rolling window
+- Half-opens after 30 seconds to test recovery
+- Closes on successful request in half-open state
+- **Only 5xx errors and network failures trip the circuit** (4xx client errors do not)
+
+### Retry Logic
+
+Automatic retry with exponential backoff:
+
+- Retries on: `ECONNRESET`, `ETIMEDOUT`, `ECONNREFUSED`, `ENOTFOUND`
+- Exponential backoff with ±20% jitter
+- Configurable max retries and delays
+
+### Health Monitoring
+
+Continuous upstream health checking:
+
+- Periodic health checks (default: 30s interval)
+- Configurable health check paths per route
+- Consecutive failure threshold before marking unhealthy
+- Automatic recovery on success
+
+### Rate Limiting
+
+Per-IP rate limiting with configurable windows:
+
+- **Redis-backed for distributed deployments**
+- Falls back to in-memory if Redis unavailable
+- Skips `/health`, `/metrics`, `/livez`, `/readyz` endpoints
+- Returns `429 Too Many Requests` with `Retry-After` header
+- Configurable via environment variables
+
+### Distributed Rate Limiting with Redis
+
+For multi-instance deployments, configure Redis:
+
+```bash
+# Enable Redis rate limiting
+REDIS_URL=redis://localhost:6379
+```
+
+The gateway will:
+1. Attempt to connect to Redis on startup
+2. Log success/failure of connection
+3. Fall back to in-memory if Redis is unavailable
+4. Properly close Redis connection on shutdown
+
+## Logging
+
+Winston-based structured logging with rotation:
+
+### Log Structure
+
+```
+logs/
+├── app-2026-01-22/
+│   ├── 20.log          # Hour 20 logs
+│   └── 21.log          # Hour 21 logs
+├── error.log           # All errors
+├── exceptions.log      # Uncaught exceptions
+└── rejections.log      # Unhandled rejections
+```
+
+### Log Levels
+
+| Level | Description |
+|-------|-------------|
+| `error` | Errors and 5xx responses |
+| `warn` | Warnings and 4xx responses |
+| `info` | Normal operations |
+| `debug` | Detailed debugging (dev only) |
+
+### Log Format
+
+All logs include request correlation IDs:
+
+```json
+{
+  "level": "info",
+  "message": "Request completed",
+  "requestId": "abc-123-def",
+  "method": "GET",
+  "url": "/api/users",
+  "statusCode": 200,
+  "duration": "45ms",
+  "timestamp": "2026-01-22T15:30:00.000Z"
+}
 ```
 
 ## Plugins
@@ -756,65 +1039,6 @@ routes:
         headerValue: api-gateway
 ```
 
-## Enterprise Features
-
-### Circuit Breakers
-
-Prevents cascading failures when upstream services are down:
-
-- Opens after 50% error rate in rolling window
-- Half-opens after 30 seconds to test recovery
-- Closes on successful request in half-open state
-
-### Retry Logic
-
-Automatic retry with exponential backoff:
-
-- Retries on: `ECONNRESET`, `ETIMEDOUT`, `ECONNREFUSED`, `ENOTFOUND`
-- Exponential backoff with ±20% jitter
-- Configurable max retries and delays
-
-### Health Monitoring
-
-Continuous upstream health checking:
-
-- Periodic health checks (default: 30s interval)
-- Consecutive failure threshold before marking unhealthy
-- Automatic recovery on success
-
-### Rate Limiting
-
-Per-IP rate limiting with configurable windows:
-
-- Skips `/health` and `/metrics` endpoints
-- Returns `429 Too Many Requests` with `Retry-After` header
-- Configurable via environment variables
-
-## Logging
-
-Winston-based structured logging with rotation:
-
-### Log Structure
-
-```
-logs/
-├── app-2026-01-22/
-│   ├── 20.log          # Hour 20 logs
-│   └── 21.log          # Hour 21 logs
-├── error.log           # All errors
-├── exceptions.log      # Uncaught exceptions
-└── rejections.log      # Unhandled rejections
-```
-
-### Log Levels
-
-| Level | Description |
-|-------|-------------|
-| `error` | Errors and 5xx responses |
-| `warn` | Warnings and 4xx responses |
-| `info` | Normal operations |
-| `debug` | Detailed debugging (dev only) |
-
 ## Testing
 
 ```bash
@@ -828,58 +1052,47 @@ npm run test:coverage
 npm run test:watch
 ```
 
-**Test Coverage:** 165 tests across 19 test suites covering:
+**Test Coverage:** 275 tests across 26 test suites covering:
 - Unit tests for all core modules
 - Integration tests for middleware combinations
 - Functional tests for end-to-end flows
 - Edge cases and error handling
+- Custom error classes
+- Configuration validation
+- Barrel exports
 
-## Example: Complete Production Setup
+## Monitoring
+
+### Prometheus Integration
+
+Scrape configuration:
 
 ```yaml
-# gateway.yaml
-version: 2.2.0
-
-routes:
-  # Public auth endpoints
-  - path: /auth
-    upstream: http://sb-ms-auth-risk:9000
-    timeout: 5000
-
-  # Protected API with load balancing
-  - path: /api
-    upstream:
-      - http://api-server-1:8080
-      - http://api-server-2:8080
-      - http://api-server-3:8080
-    loadBalanceStrategy: health_aware
-    timeout: 15000
-    maxRetries: 3
-    plugins:
-      - name: central-auth
-        enabled: true
-        authServiceUrl: http://sb-ms-auth-risk:9000
-
-  # Admin endpoints with stricter settings
-  - path: /admin
-    upstream: http://admin-service:8080
-    timeout: 30000
-    maxRetries: 1
-    plugins:
-      - name: central-auth
-        enabled: true
-        authServiceUrl: http://sb-ms-auth-risk:9000
+scrape_configs:
+  - job_name: 'api-gateway'
+    static_configs:
+      - targets: ['api-gateway:3000']
+    metrics_path: /metrics
+    scrape_interval: 15s
 ```
 
-```bash
-# Start with production settings
-NODE_ENV=production \
-PORT=3000 \
-RATE_LIMIT_MAX=1000 \
-MAX_SOCKETS=512 \
-TRUST_PROXY=true \
-npm start
-```
+### Key Metrics to Monitor
+
+| Metric | Alert Threshold |
+|--------|----------------|
+| `http_request_duration_seconds` p99 | > 5s |
+| `http_request_errors_total` rate | > 10/min |
+| `circuit_breaker_state` | = 1 (open) |
+| `upstream_request_duration_seconds` p99 | > 10s |
+
+### Alerting
+
+Set up alerts for:
+- Circuit breaker opens (upstream failures)
+- High error rates
+- High latency
+- Rate limit exceeded spikes
+- Memory usage
 
 ## License
 

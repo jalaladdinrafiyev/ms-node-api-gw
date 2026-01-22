@@ -16,6 +16,7 @@ const { config, logger, configLoader, watcher, shutdown } = require('./lib');
 const {
     security,
     globalRateLimiter,
+    rateLimiter,
     requestId,
     requestTimeout,
     requestLogger,
@@ -149,7 +150,7 @@ app.use(globalErrorHandler);
 /**
  * Start the HTTP server
  */
-const startServer = () => {
+const startServer = async () => {
     const port = config.server.port;
     
     // Validate port
@@ -157,12 +158,26 @@ const startServer = () => {
         logger.error('Invalid PORT configuration', { port });
         process.exit(1);
     }
+
+    // Initialize Redis for distributed rate limiting (non-blocking)
+    if (process.env.REDIS_URL) {
+        rateLimiter.initializeRedis().then(connected => {
+            if (connected) {
+                logger.info('Distributed rate limiting enabled via Redis');
+            }
+        }).catch(err => {
+            logger.warn('Redis initialization failed, using in-memory rate limiting', {
+                error: err.message
+            });
+        });
+    }
     
     server = app.listen(port, () => {
         logger.info('Gateway started', { 
             port,
             env: config.env,
-            pid: process.pid
+            pid: process.pid,
+            rateLimitStore: rateLimiter.isRedisConnected() ? 'redis' : 'memory'
         });
     });
     
@@ -178,6 +193,9 @@ const startServer = () => {
         }
         process.exit(1);
     });
+    
+    // Register rate limiter shutdown handler
+    shutdown.registerShutdownHandler(rateLimiter.shutdown);
     
     // Setup graceful shutdown
     shutdown.setupGracefulShutdown({ 
