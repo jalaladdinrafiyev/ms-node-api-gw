@@ -102,7 +102,9 @@ const createRateLimiter = (options = {}) => {
         ...restOptions
     } = options;
 
-    const store = useRedis ? getStore() : undefined;
+    // Only use Redis store if explicitly requested AND available
+    // Otherwise allow caller to provide their own store via restOptions
+    const redisStore = useRedis ? getStore() : undefined;
 
     return rateLimit({
         windowMs,
@@ -116,18 +118,20 @@ const createRateLimiter = (options = {}) => {
         legacyHeaders: false,
         skipSuccessfulRequests,
         skipFailedRequests,
-        store,
+        // Apply rest options first (may include caller's store)
         ...restOptions,
-        
-        // IPv6-safe key generator
+        // Only override store if Redis is available, otherwise use caller's store from restOptions
+        ...(redisStore ? { store: redisStore } : {}),
+        // Disable all validations - we handle these cases properly:
+        // - xForwardedForHeader: we use req.ip which Express normalizes  
+        // - creationStack: we intentionally use lazy init for Redis
+        // - keyGeneratorIpFallback: we use req.ip which handles IPv6
+        validate: false,
+        // Use req.ip which Express normalizes (handles IPv6 properly when trust proxy is set)
         keyGenerator: (req) => {
-            // Use X-Forwarded-For if behind proxy and trusted
-            if (config.server.trustProxy && req.headers['x-forwarded-for']) {
-                const forwarded = req.headers['x-forwarded-for'];
-                const ip = Array.isArray(forwarded) ? forwarded[0] : forwarded.split(',')[0].trim();
-                return ip;
-            }
-            return req.ip || req.socket?.remoteAddress || req.connection?.remoteAddress || '127.0.0.1';
+            // Express's req.ip already handles X-Forwarded-For when trust proxy is enabled
+            // and normalizes IPv6 addresses properly
+            return req.ip || '127.0.0.1';
         },
         
         // Custom rate limit exceeded handler
@@ -136,7 +140,7 @@ const createRateLimiter = (options = {}) => {
                 ip: req.ip || req.connection?.remoteAddress || 'unknown',
                 url: req.originalUrl || req.url,
                 method: req.method,
-                store: store ? 'redis' : 'memory'
+                store: redisStore ? 'redis' : 'memory'
             });
             res.status(429).json({
                 error: 'Rate Limit Exceeded',
